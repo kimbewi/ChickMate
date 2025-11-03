@@ -114,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Padding(
             padding:EdgeInsets.all(19),
             child:Container(
-            height: 200,
+            height: 300,
             width: double.infinity,
             color: Colors.black,
             // video player from the Raspberry Pi will go here
