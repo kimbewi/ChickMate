@@ -1,4 +1,7 @@
+import 'dart:async'; // for timer
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart'; // for date formatting
 
 void main() {
   runApp(const MyApp());
@@ -76,15 +79,44 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+
+    
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        //bg of appbar
+        backgroundColor: Color.fromRGBO(253, 253, 253, 1.0),
+        //to prevent pushing items to the left
+        automaticallyImplyLeading: false,
+
+        title: Row(
+          //mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/images/chickmateLogo.png', height: 40),
+
+            const SizedBox(width: 8), // add space between widgets
+
+            Text(
+              "ChickMate",
+              style: GoogleFonts.inter(
+                fontSize: 30.0,
+                fontWeight: FontWeight.w800,
+                color: Color.fromRGBO(32, 32, 32, 1.0),
+              ),
+            ),
+          ],
+        ),
+
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            // We use a Center to vertically align our clock in the AppBar
+            child: Center(
+              child: LiveClock(), // Our new custom clock widget
+            ),
+          ),
+        ],
+
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -118,6 +150,61 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+
+// TIME AND DATE 
+class LiveClock extends StatefulWidget {
+  const LiveClock({super.key});
+
+  @override
+  State<LiveClock> createState() => _LiveClockState();
+}
+
+class _LiveClockState extends State<LiveClock> {
+  late String _dateTime;
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the time when the widget is created
+    _dateTime = _formatDateTime(DateTime.now());
+    
+    // Create a timer that updates the time every minute
+    _timer = Timer.periodic(const Duration(minutes: 1), (Timer t) => _updateTime());
+  }
+
+  @override
+  void dispose() {
+    // Cancel the timer when the widget is disposed to prevent memory leaks
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _updateTime() {
+    // Update the state with the new time, which triggers a rebuild
+    setState(() {
+      _dateTime = _formatDateTime(DateTime.now());
+    });
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    // Format the date and time exactly like in your image
+    return DateFormat('MMM d, yyyy  HH:mm').format(dateTime);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _dateTime,
+      style: GoogleFonts.inter(
+        color: const Color.fromRGBO(32, 32, 32, 1.0),
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+      ),
     );
   }
 }
