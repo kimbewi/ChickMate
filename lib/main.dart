@@ -2,8 +2,15 @@ import 'dart:async'; // for timer
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart'; // for date formatting
+import 'package:firebase_core/firebase_core.dart'; // for firebase
+import 'firebase_options.dart'; // for firebase
+import 'package:firebase_database/firebase_database.dart'; // for firebase
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); 
+  await Firebase.initializeApp( 
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -35,9 +42,46 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   // LOGIC FOR GETTING THE DATA FROM ESP32 WILL ALSO BE PLACED HERE
   // PLACEHOLDER TEXT ONLY FOR ESP32 DATA
-  String ammoniaLevel = "68";
-  String temperature = "99";
+  String ammoniaLevel = "--";
+  String temperature = "--";
   String humidity = "--";
+
+  late DatabaseReference _sensorDataRef; // Reference to your data
+  late StreamSubscription _sensorDataSubscription; // Listener
+
+  @override
+  void initState() {
+    super.initState();
+    // Point the reference to the "node" or "path" in your database
+    // We'll tell the ESP32 to write to this same "sensorData" path
+    _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
+
+    // Start listening for changes
+    _sensorDataSubscription = _sensorDataRef.onValue.listen((DatabaseEvent event) {
+      // Data from Firebase comes as a "snapshot"
+      if (event.snapshot.value != null) {
+        // The data is a Map. We cast it to be sure.
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+
+        // Call setState to rebuild the UI with the new data
+        setState(() {
+          // Use .toString() to safely handle data (Firebase might send numbers)
+          // The '??' (null-check operator) keeps "--" if a value is missing
+          ammoniaLevel = data['ammonia']?.toString() ?? '--';
+          temperature = data['temperature']?.toString() ?? '--';
+          humidity = data['humidity']?.toString() ?? '--';
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // ALWAYS cancel the subscription when the widget is removed
+    _sensorDataSubscription.cancel();
+    super.dispose();
+  }
+  // --- END OF NEW FIREBASE SETUP ---
 
   @override
   Widget build(BuildContext context) {
