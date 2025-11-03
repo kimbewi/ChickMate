@@ -17,21 +17,6 @@ class MyApp extends StatelessWidget {
       title: 'ChickMate',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
       home: const MyHomePage(title: 'ChickMate'),
@@ -41,16 +26,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -58,17 +33,14 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  // LOGIC FOR GETTING THE DATA FROM ESP32 WILL ALSO BE PLACED HERE
+  // PLACEHOLDER TEXT ONLY FOR ESP32 DATA
+  String ammoniaLevel = "68";
+  String temperature = "99";
+  String humidity = "--";
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-
-    
 
     return Scaffold(
       appBar: AppBar(
@@ -76,10 +48,9 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Color.fromRGBO(253, 253, 253, 1.0),
         //to prevent pushing items to the left
         automaticallyImplyLeading: false,
-        //elevation: 0,
+        elevation: 2,
 
         title: Row(
-          //mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset('assets/images/chickmateLogo.png', height: 40),
 
@@ -99,18 +70,165 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16.0),
-            // We use a Center to vertically align our clock in the AppBar
+            // to vertically align clock in the AppBar
             child: Center(
-              child: LiveClock(), // Our new custom clock widget
+              child: LiveClock(), // custom clock widget
             ),
           ),
         ],
-
       ),
       
       body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color.fromRGBO(248, 248, 255, 1.0),
+              Color.fromRGBO(255, 247, 209, 1.0)
+            ],
+            // start and end points of the gradient
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child:Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // VIDEO FEED SECTION
+          Text(
+            "Video Feed",
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+            ),
 
-      )
+            // a space between text and video
+            const SizedBox(height:10),
+
+            Card(
+            color: const Color(0xFFFAF6EE),
+            elevation: 1,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),  
+            child: Padding(
+            padding:EdgeInsets.all(19),
+            child:Container(
+            height: 200,
+            width: double.infinity,
+            color: Colors.black,
+            // video player from the Raspberry Pi will go here
+            child: const Center(
+              child: Text(
+                'Video feed is offline',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+          ),
+        ),
+
+        const SizedBox(height:30),
+
+        // ENVIRONMENTAL STATUS SECTION
+        Text(
+          'Environmental Status',
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+
+        // wrap - for responsiveness
+        Wrap(
+          spacing: 12.0, // horizontal space between cards
+          runSpacing: 12.0, // vertical space between rows of cards
+          children: [
+            // from custom widget below
+            StatusCard(
+              title: 'Ammonia Level',
+              data: ammoniaLevel, // data from ESP32
+              unit: '%',
+              icon: Icons.dangerous_outlined,
+              iconColor: Colors.green,
+            ),
+            StatusCard(
+              title: 'Temperature',
+              data: temperature, // data from ESP32
+              unit: '°C',
+              icon: Icons.thermostat,
+              iconColor: Colors.redAccent,
+            ),
+            StatusCard(
+              title: 'Humidity',
+              data: humidity, // data from ESP32
+              unit: '%',
+              icon: Icons.water_drop_outlined,
+              iconColor: Colors.blueAccent,
+            ),
+
+          ],
+          
+        )
+        ]),
+      ),
+      ),
+    );
+    
+  }
+}
+
+// REUSABLE CARD FOR SENSOR WIDGETS
+class StatusCard extends StatelessWidget {
+  final String title;
+  final String data;
+  final String unit;
+  final IconData icon;
+  final Color iconColor;
+
+  const StatusCard({
+    super.key,
+    required this.title,
+    required this.data,
+    required this.unit,
+    required this.icon,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: const Color(0xFFFAF6EE),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 150, // fixed width for each card
+        height: 110,
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
+            ),
+            const SizedBox(height: 17),
+            Wrap(
+              //spacing: 5,
+              children: [
+                Icon(icon, color: iconColor, size: 35),
+                const SizedBox(width: 8),
+                Text(
+                  data, // data from ESP32 will go here
+                  style: GoogleFonts.inter(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  unit, // units like "%" or "°C"
+                  style: GoogleFonts.inter(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
