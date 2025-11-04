@@ -47,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String humidity = "--";
 
   late DatabaseReference _sensorDataRef; // Reference to your data
-  late StreamSubscription _sensorDataSubscription; // Listener
+  Timer? _dataTimer; // Timer variable
 
   @override
   void initState() {
@@ -56,31 +56,45 @@ class _MyHomePageState extends State<MyHomePage> {
     // We'll tell the ESP32 to write to this same "sensorData" path
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
 
-    // Start listening for changes
-    _sensorDataSubscription = _sensorDataRef.onValue.listen((DatabaseEvent event) {
-      // Data from Firebase comes as a "snapshot"
-      if (event.snapshot.value != null) {
-        // The data is a Map. We cast it to be sure.
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
+    // Fetch data immediately when the app starts
+    _fetchSensorData();
 
-        // Call setState to rebuild the UI with the new data
-        setState(() {
-          // Use .toString() to safely handle data (Firebase might send numbers)
-          // The '??' (null-check operator) keeps "--" if a value is missing
-          ammoniaLevel = data['ammonia']?.toString() ?? '--';
-          temperature = data['temperature']?.toString() ?? '--';
-          humidity = data['humidity']?.toString() ?? '--';
-        });
-      }
+    // Set up a timer to fetch data every 1 minute
+    _dataTimer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
+      _fetchSensorData();
     });
+    
+  }
+
+  // --- NEW FUNCTION TO FETCH DATA ONCE ---
+  void _fetchSensorData() async {
+    // .get() fetches the data ONE TIME, instead of listening
+    final snapshot = await _sensorDataRef.get();
+
+    if (snapshot.exists) {
+      final data = snapshot.value as Map<dynamic, dynamic>;
+      setState(() {
+        ammoniaLevel = data['ammonia']?.toString() ?? '--';
+        temperature = data['temperature']?.toString() ?? '--';
+        humidity = data['humidity']?.toString() ?? '--';
+      });
+    } else {
+      // Handle case where data doesn't exist (e.g., first time)
+      setState(() {
+        ammoniaLevel = "--";
+        temperature = "--";
+        humidity = "--";
+      });
+    }
   }
 
   @override
   void dispose() {
     // ALWAYS cancel the subscription when the widget is removed
-    _sensorDataSubscription.cancel();
+    _dataTimer?.cancel();
     super.dispose();
   }
+
   // --- END OF NEW FIREBASE SETUP ---
 
   @override
