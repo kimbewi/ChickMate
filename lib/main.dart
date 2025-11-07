@@ -52,7 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late DatabaseReference _sensorDataRef; // Reference for sensor data
   late DatabaseReference _controlsRef; // Reference for controls
-  Timer? _dataTimer; // Timer variable
+  StreamSubscription? _sensorDataSubscription;
+  StreamSubscription? _controlsSubscription;
 
   @override
   void initState() {
@@ -61,53 +62,39 @@ class _MyHomePageState extends State<MyHomePage> {
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
     _controlsRef = FirebaseDatabase.instance.ref('controls');
 
-    // Fetch data immediately when the app starts
-    _fetchSensorData(); // call function to get sensor data
-    _fetchControlData(); // call function to get control status
+      // Listen to the sensor data stream
+    _sensorDataSubscription = _sensorDataRef.onValue.listen((DatabaseEvent event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          ammoniaLevel = data['ammonia']?.toString() ?? '--';
+          temperature = data['temperature']?.toString() ?? '--';
+          humidity = data['humidity']?.toString() ?? '--';
+        });
+      } else {
+        // Handle case where data doesn't exist
+        setState(() {
+          ammoniaLevel = "--";
+          temperature = "--";
+          humidity = "--";
+        });
+      }
+    });
 
-    // !!! [SUBJECT TO CHANGE] Set up a timer to fetch data every 1 minute (delay)
-    _dataTimer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
-      _fetchSensorData();
+    //Listen to the controls data stream
+    _controlsSubscription = _controlsRef.onValue.listen((DatabaseEvent event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          // Use '?? false' to default to 'Off' if data is missing
+          isExhaustFanOn = data['exhaustFan'] ?? false;
+          isIntakeFanOn = data['intakeFan'] ?? false;
+          isHeaterOn = data['heater'] ?? false;
+        });
+      }
+      // If snapshot doesn't exist, they will keep their default values
     });
     
-  }
-
-  // FUNCTION TO FETCH DATA ONCE 
-  void _fetchSensorData() async {
-    // .get() fetches the data ONE TIME, instead of listening
-    final snapshot = await _sensorDataRef.get();
-
-    if (snapshot.exists) {
-      final data = snapshot.value as Map<dynamic, dynamic>;
-      setState(() {
-        ammoniaLevel = data['ammonia']?.toString() ?? '--';
-        temperature = data['temperature']?.toString() ?? '--';
-        humidity = data['humidity']?.toString() ?? '--';
-      });
-    } else {
-      // Handle case where data doesn't exist (e.g., first time)
-      setState(() {
-        ammoniaLevel = "--";
-        temperature = "--";
-        humidity = "--";
-      });
-    }
-  }
-
-    // FUNCTION TO FETCH CONTROL DATA ONCE
-  void _fetchControlData() async {
-    final snapshot = await _controlsRef.get();
-
-    if (snapshot.exists) {
-      final data = snapshot.value as Map<dynamic, dynamic>;
-      setState(() {
-        // Use '?? false' to default to 'Off' if data is missing
-        isExhaustFanOn = data['exhaustFan'] ?? false;
-        isIntakeFanOn = data['intakeFan'] ?? false;
-        isHeaterOn = data['heater'] ?? false;
-      });
-    }
-    // If snapshot doesn't exist, they will keep their default values
   }
 
     // FUNCTION TO SEND CONTROL COMMANDS 
@@ -119,7 +106,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     // ALWAYS cancel the subscription when the widget is removed
-    _dataTimer?.cancel();
+    _sensorDataSubscription?.cancel();
+    _controlsSubscription?.cancel();
     super.dispose();
   }
 
@@ -489,7 +477,7 @@ class _LiveClockState extends State<LiveClock> {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    // Format the date and time exactly like in your image
+    // Format the date and time
     return DateFormat('MMM d, yyyy  HH:mm').format(dateTime);
   }
 
