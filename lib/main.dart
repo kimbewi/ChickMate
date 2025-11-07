@@ -1,9 +1,16 @@
 import 'dart:async'; // for timer
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart'; // for fonts
 import 'package:intl/intl.dart'; // for date formatting
+import 'package:firebase_core/firebase_core.dart'; // for firebase
+import 'firebase_options.dart'; // for firebase
+import 'package:firebase_database/firebase_database.dart'; // for firebase
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); 
+  await Firebase.initializeApp( 
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -33,16 +40,82 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // LOGIC FOR GETTING THE DATA FROM ESP32 WILL ALSO BE PLACED HERE
-  // PLACEHOLDER TEXT ONLY FOR ESP32 DATA
-  String ammoniaLevel = "68";
-  String temperature = "99";
+  // VARIABLES FOR SENSOR DATA
+  String ammoniaLevel = "--";
+  String temperature = "--";
   String humidity = "--";
+
+  // STATE VARIABLES FOR CONTROLS 
+  bool isExhaustFanOn = false; 
+  bool isIntakeFanOn = false;
+  bool isHeaterOn = false;
+
+  late DatabaseReference _sensorDataRef; // Reference for sensor data
+  late DatabaseReference _controlsRef; // Reference for controls
+  StreamSubscription? _sensorDataSubscription;
+  StreamSubscription? _controlsSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // Point the reference to the "node" or "path" in your database
+    _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
+    _controlsRef = FirebaseDatabase.instance.ref('controls');
+
+      // Listen to the sensor data stream
+    _sensorDataSubscription = _sensorDataRef.onValue.listen((DatabaseEvent event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          ammoniaLevel = data['ammonia']?.toString() ?? '--';
+          temperature = data['temperature']?.toString() ?? '--';
+          humidity = data['humidity']?.toString() ?? '--';
+        });
+      } else {
+        // Handle case where data doesn't exist
+        setState(() {
+          ammoniaLevel = "--";
+          temperature = "--";
+          humidity = "--";
+        });
+      }
+    });
+
+    //Listen to the controls data stream
+    _controlsSubscription = _controlsRef.onValue.listen((DatabaseEvent event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          // Use '?? false' to default to 'Off' if data is missing
+          isExhaustFanOn = data['exhaustFan'] ?? false;
+          isIntakeFanOn = data['intakeFan'] ?? false;
+          isHeaterOn = data['heater'] ?? false;
+        });
+      }
+      // If snapshot doesn't exist, they will keep their default values
+    });
+    
+  }
+
+    // FUNCTION TO SEND CONTROL COMMANDS 
+  void _updateControl(String controlName, bool value) {
+    // This will update a specific child, e.g., "controls/exhaustFan"
+    _controlsRef.child(controlName).set(value);
+  }
+
+  @override
+  void dispose() {
+    // ALWAYS cancel the subscription when the widget is removed
+    _sensorDataSubscription?.cancel();
+    _controlsSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
+      // --- HEADER SECTION ---
       appBar: AppBar(
         //bg of appbar
         backgroundColor: Color.fromRGBO(253, 253, 253, 1.0),
@@ -78,6 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       
+      // --- BODY SECTION ---
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -92,10 +166,11 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
           child:Column(
             crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // VIDEO FEED SECTION
+            // --- VIDEO FEED SECTION ---
           Text(
             "Video Feed",
             style: GoogleFonts.inter(
@@ -108,7 +183,7 @@ class _MyHomePageState extends State<MyHomePage> {
             const SizedBox(height:10),
 
             Card(
-            color: const Color(0xFFFAF6EE),
+            color: Colors.white,
             elevation: 1,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),  
             child: Padding(
@@ -130,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         const SizedBox(height:30),
 
-        // ENVIRONMENTAL STATUS SECTION
+        // --- ENVIRONMENTAL STATUS SECTION ---
         Text(
           'Environmental Status',
           style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
@@ -142,7 +217,6 @@ class _MyHomePageState extends State<MyHomePage> {
           spacing: 12.0, // horizontal space between cards
           runSpacing: 12.0, // vertical space between rows of cards
           children: [
-            // from custom widget below
             StatusCard(
               title: 'Ammonia Level',
               data: ammoniaLevel, // data from ESP32
@@ -164,15 +238,66 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: Icons.water_drop_outlined,
               iconColor: Colors.blueAccent,
             ),
-
           ],
-          
-        )
+        ),
+              // --- CONTROLS SECTION ---
+              const SizedBox(height: 30),
+
+              Text(
+                'Controls',
+                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+
+              Wrap(
+                spacing: 12.0, // horizontal space
+                runSpacing: 12.0, // vertical space
+                children: [
+                  // --- EXHAUST FAN CARD ---
+                  ControlCard(
+                    title: 'Exhaust Fan',
+                    icon: Icons.air_outlined, 
+                    isOn: isExhaustFanOn,
+                    onChanged: (bool value) {
+                      setState(() {
+                        isExhaustFanOn = value; // Update UI instantly
+                      });
+                      _updateControl('exhaustFan', value); // Send command to Firebase
+                    },
+                  ),
+
+                  // --- INTAKE FAN CARD ---
+                  ControlCard(
+                    title: 'Intake Fan',
+                    icon: Icons.air_outlined, 
+                    isOn: isIntakeFanOn,
+                    onChanged: (bool value) {
+                      setState(() {
+                        isIntakeFanOn = value;
+                      });
+                      _updateControl('intakeFan', value); 
+                    },
+                  ),
+
+                  // --- HEATER CARD ---
+                  ControlCard(
+                    title: 'Heater',
+                    icon: Icons.whatshot_outlined, 
+                    isOn: isHeaterOn,
+                    onChanged: (bool value) {
+                      setState(() {
+                        isHeaterOn = value;
+                      });
+                      _updateControl('heater', value);
+                    },
+                  ),
+                ],
+              )
         ]),
       ),
       ),
+    ),
     );
-    
   }
 }
 
@@ -196,7 +321,7 @@ class StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFFFAF6EE),
+      color: Colors.white,
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -215,14 +340,14 @@ class StatusCard extends StatelessWidget {
               //spacing: 5,
               children: [
                 Icon(icon, color: iconColor, size: 35),
-                const SizedBox(width: 8),
+                const SizedBox(width: 5),
                 Text(
                   data, // data from ESP32 will go here
-                  style: GoogleFonts.inter(fontSize: 25, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 19.5, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   unit, // units like "%" or "°C"
-                  style: GoogleFonts.inter(fontSize: 25, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(fontSize: 19.5, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -233,6 +358,87 @@ class StatusCard extends StatelessWidget {
   }
 }
 
+// REUSABLE CARD FOR CONTROL CARDS ---
+class ControlCard extends StatelessWidget {
+  final String title;
+  final bool isOn;
+  final IconData icon;
+  final Function(bool) onChanged;
+
+  const ControlCard({
+    super.key,
+    required this.title,
+    required this.isOn,
+    required this.icon,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // --- Dynamic colors based on the 'isOn' state ---
+    final Color cardColor = isOn ? const Color(0xFFF9A825) : Colors.white;
+    final Color iconColor = isOn ? Colors.white : const Color(0xFFF9A825);
+    final Color titleColor = isOn ? Colors.white : Colors.black87;
+    final Color statusColor = isOn ? Colors.white70 : Colors.black54;
+
+    return Card(
+      color: cardColor,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: 150, // Fixed width
+        height: 150, // Fixed height to make it more square
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distributes space
+          children: [
+            // --- Row for Icon and Switch ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: iconColor, size: 40),
+                Transform.scale(
+                  // Makes the switch a bit smaller
+                  scale: 0.8,
+                  child: Switch(
+                    value: isOn,
+                    onChanged: onChanged,
+                    activeThumbColor: Colors.white, // Color of the switch knob
+                    activeTrackColor: Colors.white.withAlpha(128), // 0.5 opacity
+                  ),
+                ),
+              ],
+            ),
+
+            // --- Column for Title and Status ---
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: titleColor,
+                  ),
+                ),
+                Text(
+                  isOn ? 'On' : 'Off',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: statusColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // TIME AND DATE 
 class LiveClock extends StatefulWidget {
@@ -271,7 +477,7 @@ class _LiveClockState extends State<LiveClock> {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    // Format the date and time exactly like in your image
+    // Format the date and time
     return DateFormat('MMM d, yyyy  HH:mm').format(dateTime);
   }
 

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "581019756993",
+    "firebase_url": "https://chickmate-60301-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "chickmate-60301",
+    "storage_bucket": "chickmate-60301.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:581019756993:android:8dcbc8b33247972757e740",
+        "android_client_info": {
+          "package_name": "com.example.chickmate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzMHy_0de5DwTSkbgyefkpqCKrmQCy6YQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
