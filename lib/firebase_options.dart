@@ -41,51 +41,52 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCbmnFxfSsiH8AxC3XzAZLaPUOV_6Sk-zk',
-    appId: '1:581019756993:web:be9378c7eb3c375157e740',
-    messagingSenderId: '581019756993',
-    projectId: 'chickmate-60301',
-    authDomain: 'chickmate-60301.firebaseapp.com',
-    databaseURL: 'https://chickmate-60301-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'chickmate-60301.firebasestorage.app',
+    apiKey: 'AIzaSyAdm5Xmc-sdqgA3Py3Sc5rQOYs5SP_FPww',
+    appId: '1:625455130422:web:5c5ca912a717c553b4f597',
+    messagingSenderId: '625455130422',
+    projectId: 'chickmate-ef0a0',
+    authDomain: 'chickmate-ef0a0.firebaseapp.com',
+    databaseURL: 'https://chickmate-ef0a0-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chickmate-ef0a0.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDzMHy_0de5DwTSkbgyefkpqCKrmQCy6YQ',
-    appId: '1:581019756993:android:8dcbc8b33247972757e740',
-    messagingSenderId: '581019756993',
-    projectId: 'chickmate-60301',
-    databaseURL: 'https://chickmate-60301-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'chickmate-60301.firebasestorage.app',
+    apiKey: 'AIzaSyCkj9N0YV4RLwnlZbyT_ZEnfvggjpgtHBg',
+    appId: '1:625455130422:android:5a59b41c74f3fad3b4f597',
+    messagingSenderId: '625455130422',
+    projectId: 'chickmate-ef0a0',
+    databaseURL: 'https://chickmate-ef0a0-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chickmate-ef0a0.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA9XoORLjPHahR_uIgS2ayFf5mD_2QgsvE',
-    appId: '1:581019756993:ios:3bf1258600dbde7f57e740',
-    messagingSenderId: '581019756993',
-    projectId: 'chickmate-60301',
-    databaseURL: 'https://chickmate-60301-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'chickmate-60301.firebasestorage.app',
+    apiKey: 'AIzaSyA_XCDeq8xtI0yCkgsOm25wg_Mx_d1zkrE',
+    appId: '1:625455130422:ios:16ad664111b81c15b4f597',
+    messagingSenderId: '625455130422',
+    projectId: 'chickmate-ef0a0',
+    databaseURL: 'https://chickmate-ef0a0-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chickmate-ef0a0.firebasestorage.app',
     iosBundleId: 'com.example.chickmate',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA9XoORLjPHahR_uIgS2ayFf5mD_2QgsvE',
-    appId: '1:581019756993:ios:3bf1258600dbde7f57e740',
-    messagingSenderId: '581019756993',
-    projectId: 'chickmate-60301',
-    databaseURL: 'https://chickmate-60301-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'chickmate-60301.firebasestorage.app',
+    apiKey: 'AIzaSyA_XCDeq8xtI0yCkgsOm25wg_Mx_d1zkrE',
+    appId: '1:625455130422:ios:16ad664111b81c15b4f597',
+    messagingSenderId: '625455130422',
+    projectId: 'chickmate-ef0a0',
+    databaseURL: 'https://chickmate-ef0a0-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chickmate-ef0a0.firebasestorage.app',
     iosBundleId: 'com.example.chickmate',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCbmnFxfSsiH8AxC3XzAZLaPUOV_6Sk-zk',
-    appId: '1:581019756993:web:817bf4301d99c25a57e740',
-    messagingSenderId: '581019756993',
-    projectId: 'chickmate-60301',
-    authDomain: 'chickmate-60301.firebaseapp.com',
-    databaseURL: 'https://chickmate-60301-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'chickmate-60301.firebasestorage.app',
+    apiKey: 'AIzaSyAdm5Xmc-sdqgA3Py3Sc5rQOYs5SP_FPww',
+    appId: '1:625455130422:web:e59ddb2673f59b10b4f597',
+    messagingSenderId: '625455130422',
+    projectId: 'chickmate-ef0a0',
+    authDomain: 'chickmate-ef0a0.firebaseapp.com',
+    databaseURL: 'https://chickmate-ef0a0-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chickmate-ef0a0.firebasestorage.app',
   );
+
 }
