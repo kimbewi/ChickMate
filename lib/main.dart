@@ -45,6 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String ammoniaLevel = "--";
   String temperature = "--";
   String humidity = "--";
+  String lightLevel = "--";
 
   // STATE VARIABLES FOR CONTROLS
   bool isExhaustFanOn = false;
@@ -81,6 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ammoniaLevel = data['ammonia']?.toString() ?? '--';
           temperature = data['temperature']?.toString() ?? '--';
           humidity = data['humidity']?.toString() ?? '--';
+          lightLevel = data['lightLevel']?.toString() ?? '--';
         });
       } else {
         // Handle case where data doesn't exist
@@ -88,6 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ammoniaLevel = "--";
           temperature = "--";
           humidity = "--";
+          lightLevel = "--";
         });
       }
     });
@@ -275,34 +278,54 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 const SizedBox(height: 10),
 
-                // wrap - for responsiveness
-                Wrap(
-                  spacing: 12.0, // horizontal space between cards
-                  runSpacing: 12.0, // vertical space between rows of cards
-                  children: [
-                    StatusCard(
-                      title: 'Ammonia Level',
-                      data: ammoniaLevel, // data from ESP32
-                      unit: '%',
-                      icon: Icons.dangerous_outlined,
-                      iconColor: Colors.green,
-                    ),
-                    StatusCard(
-                      title: 'Temperature',
-                      data: temperature, // data from ESP32
-                      unit: '°C',
-                      icon: Icons.thermostat,
-                      iconColor: Colors.redAccent,
-                    ),
-                    StatusCard(
-                      title: 'Humidity',
-                      data: humidity, // data from ESP32
-                      unit: '%',
-                      icon: Icons.water_drop_outlined,
-                      iconColor: Colors.blueAccent,
-                    ),
-                  ],
-                ),
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Ammonia\nLevel',
+                          data: ammoniaLevel,
+                          unit: '%',
+                          icon: Icons.dangerous_outlined,
+                          iconColor: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 3.0),
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Temperature',
+                          data: temperature,
+                          unit: '°C',
+                          icon: Icons.thermostat,
+                          iconColor: Colors.redAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 3.0),
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Humidity',
+                          data: humidity,
+                          unit: '%',
+                          icon: Icons.water_drop_outlined,
+                          iconColor: Colors.blueAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 3.0),
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Light Level',
+                          data: lightLevel,
+                          unit: 'lux',
+                          icon: Icons.wb_sunny_outlined,
+                          iconColor: Colors.yellowAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            
                 // --- CONTROLS SECTION ---
                 const SizedBox(height: 30),
 
@@ -366,18 +389,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 SliderControlCard(
                     title: 'Light Bulb',
                     icon: Icons.lightbulb_outline,
-                    value: lightBrightness, // Use the state variable from Step 1
+                    value: lightBrightness,
                     onChanged: (newValue) {
-                      // This function is called every time the slider moves
-                      
-                      // 1. Update the UI instantly
                       setState(() {
                         lightBrightness = newValue;
                       });
-                      
-                      // 2. Send the new value to Firebase
-                      // We use .round() to send a clean integer (e.g., 50)
-                      // instead of a double (e.g., 50.1234)
                       _updateControl('lightBrightness', newValue.round());
                     },
                   ),
@@ -409,43 +425,57 @@ class StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color iconBgColor = iconColor.withOpacity(0.1);
+
     return Card(
       color: Colors.white,
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 150, // fixed width for each card
-        height: 110,
-        padding: const EdgeInsets.all(16.0),
+        height: 120, 
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0), 
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start, 
           children: [
-            Text(
-              title,
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
-            ),
-            const SizedBox(height: 17),
-            Wrap(
-              //spacing: 5,
+            Row(
               children: [
-                Icon(icon, color: iconColor, size: 35),
-                const SizedBox(width: 5),
-                Text(
-                  data, // data from ESP32 will go here
-                  style: GoogleFonts.inter(
-                    fontSize: 19.5,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.all(6.0), 
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 24,
                   ),
                 ),
+                const SizedBox(width: 6.0),
                 Text(
-                  unit, // units like "%" or "°C"
+                  title,
                   style: GoogleFonts.inter(
-                    fontSize: 19.5,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 10.0),
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+              data == "--" ? "--" : '$data$unit',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 25, 
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+            ),),
           ],
         ),
       ),
@@ -524,7 +554,9 @@ class ControlCard extends StatelessWidget {
                 ),
                 Text(
                   isOn ? 'On' : 'Off',
-                  style: GoogleFonts.inter(fontSize: 14, color: statusColor),
+                  style: GoogleFonts.inter(
+                    fontSize: 14, 
+                    color: statusColor),
                 ),
               ],
             ),
