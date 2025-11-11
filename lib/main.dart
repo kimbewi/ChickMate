@@ -5,6 +5,9 @@ import 'package:intl/intl.dart'; // for date formatting
 import 'package:firebase_core/firebase_core.dart'; // for firebase
 import 'firebase_options.dart'; // for firebase
 import 'package:firebase_database/firebase_database.dart'; // for firebase
+import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
+import 'package:web_socket_channel/io.dart'; // for websocket
+import 'dart:convert'; // for json decoding
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); 
@@ -50,6 +53,11 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isIntakeFanOn = false;
   bool isHeaterOn = false;
 
+ // WebRTC VARIABLES 
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  RTCPeerConnection? _pc;
+  IOWebSocketChannel? _channel;
+
   late DatabaseReference _sensorDataRef; // Reference for sensor data
   late DatabaseReference _controlsRef; // Reference for controls
   StreamSubscription? _sensorDataSubscription;
@@ -58,6 +66,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _connect(); // WebRTC INIT
+
     // Point the reference to the "node" or "path" in your database
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
     _controlsRef = FirebaseDatabase.instance.ref('controls');
@@ -94,7 +104,6 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       // If snapshot doesn't exist, they will keep their default values
     });
-    
   }
 
     // FUNCTION TO SEND CONTROL COMMANDS 
@@ -103,11 +112,53 @@ class _MyHomePageState extends State<MyHomePage> {
     _controlsRef.child(controlName).set(value);
   }
 
+Future<void> _connect() async {
+    await _remoteRenderer.initialize();
+
+    _pc = await createPeerConnection({
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'},
+      ]
+    });
+
+    _pc!.onTrack = (event) {
+      if (event.streams.isNotEmpty) {
+        setState(() {
+          _remoteRenderer.srcObject = event.streams[0];
+        });
+      }
+    };
+
+    // Connect to signaling server
+    _channel = IOWebSocketChannel.connect('ws://100.95.143.26:8765'); // replace with tailscale ip x.x.x.x:8765
+    
+    _channel!.stream.listen((message) async {
+      final data = json.decode(message);
+      if (data['type'] == 'answer') {
+        await _pc!.setRemoteDescription(
+          RTCSessionDescription(data['sdp'], 'answer')
+        );
+      }
+    });
+
+    // Create and send offer
+    RTCSessionDescription offer = await _pc!.createOffer();
+    await _pc!.setLocalDescription(offer);
+    
+    _channel!.sink.add(json.encode({
+      'type': 'offer',
+      'sdp': offer.sdp,
+    }));
+  }
+
   @override
   void dispose() {
     // ALWAYS cancel the subscription when the widget is removed
     _sensorDataSubscription?.cancel();
     _controlsSubscription?.cancel();
+    _remoteRenderer.dispose();
+    _pc?.close();
+    _channel?.sink.close();
     super.dispose();
   }
 
@@ -182,26 +233,32 @@ class _MyHomePageState extends State<MyHomePage> {
             // a space between text and video
             const SizedBox(height:10),
 
-            Card(
+            // ...
+          Card(
             color: Colors.white,
             elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),  
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
-            padding:EdgeInsets.all(19),
-            child:Container(
-            height: 300,
-            width: double.infinity,
-            color: Colors.black,
-            // video player from the Raspberry Pi will go here
-            child: const Center(
-              child: Text(
-                'Video feed is offline',
-                style: TextStyle(color: Colors.white),
+              padding: EdgeInsets.all(19), // Keeping your padding
+              child: Container(
+                height: 300,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black, // Background color
+                  // This makes the video player have rounded corners
+                  borderRadius: BorderRadius.circular(8), 
+                ),
+                // This clips the video to the container's rounded shape
+                clipBehavior: Clip.antiAlias, 
+                child: RTCVideoView(
+                  _remoteRenderer,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                  mirror: false,
+                ),
               ),
             ),
           ),
-          ),
-        ),
+// ...,
 
         const SizedBox(height:30),
 
