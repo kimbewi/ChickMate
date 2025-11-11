@@ -10,10 +10,8 @@ import 'package:web_socket_channel/io.dart'; // for websocket
 import 'dart:convert'; // for json decoding
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); 
-  await Firebase.initializeApp( 
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -48,12 +46,13 @@ class _MyHomePageState extends State<MyHomePage> {
   String temperature = "--";
   String humidity = "--";
 
-  // STATE VARIABLES FOR CONTROLS 
-  bool isExhaustFanOn = false; 
+  // STATE VARIABLES FOR CONTROLS
+  bool isExhaustFanOn = false;
   bool isIntakeFanOn = false;
   bool isHeaterOn = false;
+  double lightBrightness = 0.0;
 
- // WebRTC VARIABLES 
+  // WebRTC VARIABLES
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   RTCPeerConnection? _pc;
   IOWebSocketChannel? _channel;
@@ -72,8 +71,10 @@ class _MyHomePageState extends State<MyHomePage> {
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
     _controlsRef = FirebaseDatabase.instance.ref('controls');
 
-      // Listen to the sensor data stream
-    _sensorDataSubscription = _sensorDataRef.onValue.listen((DatabaseEvent event) {
+    // Listen to the sensor data stream
+    _sensorDataSubscription = _sensorDataRef.onValue.listen((
+      DatabaseEvent event,
+    ) {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         setState(() {
@@ -100,25 +101,26 @@ class _MyHomePageState extends State<MyHomePage> {
           isExhaustFanOn = data['exhaustFan'] ?? false;
           isIntakeFanOn = data['intakeFan'] ?? false;
           isHeaterOn = data['heater'] ?? false;
+          lightBrightness = (data['lightBrightness'] ?? 0.0).toDouble();
         });
       }
       // If snapshot doesn't exist, they will keep their default values
     });
   }
 
-    // FUNCTION TO SEND CONTROL COMMANDS 
-  void _updateControl(String controlName, bool value) {
+  // FUNCTION TO SEND CONTROL COMMANDS
+  void _updateControl(String controlName, dynamic value) {
     // This will update a specific child, e.g., "controls/exhaustFan"
     _controlsRef.child(controlName).set(value);
   }
 
-Future<void> _connect() async {
+  Future<void> _connect() async {
     await _remoteRenderer.initialize();
 
     _pc = await createPeerConnection({
       'iceServers': [
         {'urls': 'stun:stun.l.google.com:19302'},
-      ]
+      ],
     });
 
     _pc!.onTrack = (event) {
@@ -130,13 +132,15 @@ Future<void> _connect() async {
     };
 
     // Connect to signaling server
-    _channel = IOWebSocketChannel.connect('ws://100.95.143.26:8765'); // replace with tailscale ip x.x.x.x:8765
-    
+    _channel = IOWebSocketChannel.connect(
+      'ws://100.95.143.26:8765',
+    ); // replace with tailscale ip x.x.x.x:8765
+
     _channel!.stream.listen((message) async {
       final data = json.decode(message);
       if (data['type'] == 'answer') {
         await _pc!.setRemoteDescription(
-          RTCSessionDescription(data['sdp'], 'answer')
+          RTCSessionDescription(data['sdp'], 'answer'),
         );
       }
     });
@@ -144,11 +148,8 @@ Future<void> _connect() async {
     // Create and send offer
     RTCSessionDescription offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
-    
-    _channel!.sink.add(json.encode({
-      'type': 'offer',
-      'sdp': offer.sdp,
-    }));
+
+    _channel!.sink.add(json.encode({'type': 'offer', 'sdp': offer.sdp}));
   }
 
   @override
@@ -164,7 +165,6 @@ Future<void> _connect() async {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       // --- HEADER SECTION ---
       appBar: AppBar(
@@ -201,14 +201,14 @@ Future<void> _connect() async {
           ),
         ],
       ),
-      
+
       // --- BODY SECTION ---
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
               Color.fromRGBO(248, 248, 255, 1.0),
-              Color.fromRGBO(255, 247, 209, 1.0)
+              Color.fromRGBO(255, 247, 209, 1.0),
             ],
             // start and end points of the gradient
             begin: Alignment.topLeft,
@@ -217,143 +217,175 @@ Future<void> _connect() async {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child:Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- VIDEO FEED SECTION ---
-          Text(
-            "Video Feed",
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-            ),
-
-            // a space between text and video
-            const SizedBox(height:10),
-
-            // ...
-          Card(
-            color: Colors.white,
-            elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: EdgeInsets.all(19), // Keeping your padding
-              child: Container(
-                height: 300,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.black, // Background color
-                  // This makes the video player have rounded corners
-                  borderRadius: BorderRadius.circular(8), 
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- VIDEO FEED SECTION ---
+                Text(
+                  "Video Feed",
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                // This clips the video to the container's rounded shape
-                clipBehavior: Clip.antiAlias, 
-                child: RTCVideoView(
-                  _remoteRenderer,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                  mirror: false,
+
+                // a space between text and video
+                const SizedBox(height: 10),
+
+                // ...
+                Card(
+                  color: Colors.white,
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(19), // Keeping your padding
+                    child: Container(
+                      height: 300,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.black, // Background color
+                        // This makes the video player have rounded corners
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      // This clips the video to the container's rounded shape
+                      clipBehavior: Clip.antiAlias,
+                      child: RTCVideoView(
+                        _remoteRenderer,
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                        mirror: false,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+
+                // ...,
+                const SizedBox(height: 30),
+
+                // --- ENVIRONMENTAL STATUS SECTION ---
+                Text(
+                  'Environmental Status',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // wrap - for responsiveness
+                Wrap(
+                  spacing: 12.0, // horizontal space between cards
+                  runSpacing: 12.0, // vertical space between rows of cards
+                  children: [
+                    StatusCard(
+                      title: 'Ammonia Level',
+                      data: ammoniaLevel, // data from ESP32
+                      unit: '%',
+                      icon: Icons.dangerous_outlined,
+                      iconColor: Colors.green,
+                    ),
+                    StatusCard(
+                      title: 'Temperature',
+                      data: temperature, // data from ESP32
+                      unit: '°C',
+                      icon: Icons.thermostat,
+                      iconColor: Colors.redAccent,
+                    ),
+                    StatusCard(
+                      title: 'Humidity',
+                      data: humidity, // data from ESP32
+                      unit: '%',
+                      icon: Icons.water_drop_outlined,
+                      iconColor: Colors.blueAccent,
+                    ),
+                  ],
+                ),
+                // --- CONTROLS SECTION ---
+                const SizedBox(height: 30),
+
+                Text(
+                  'Controls',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                Wrap(
+                  spacing: 12.0, // horizontal space
+                  runSpacing: 12.0, // vertical space
+                  children: [
+                    // --- EXHAUST FAN CARD ---
+                    ControlCard(
+                      title: 'Exhaust Fan',
+                      icon: Icons.air_outlined,
+                      isOn: isExhaustFanOn,
+                      onChanged: (bool value) {
+                        setState(() {
+                          isExhaustFanOn = value; // Update UI instantly
+                        });
+                        _updateControl(
+                          'exhaustFan',
+                          value,
+                        ); // Send command to Firebase
+                      },
+                    ),
+
+                    // --- INTAKE FAN CARD ---
+                    ControlCard(
+                      title: 'Intake Fan',
+                      icon: Icons.air_outlined,
+                      isOn: isIntakeFanOn,
+                      onChanged: (bool value) {
+                        setState(() {
+                          isIntakeFanOn = value;
+                        });
+                        _updateControl('intakeFan', value);
+                      },
+                    ),
+
+                    // --- HEATER CARD ---
+                    ControlCard(
+                      title: 'Heater',
+                      icon: Icons.whatshot_outlined,
+                      isOn: isHeaterOn,
+                      onChanged: (bool value) {
+                        setState(() {
+                          isHeaterOn = value;
+                        });
+                        _updateControl('heater', value);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SliderControlCard(
+                    title: 'Light Bulb',
+                    icon: Icons.lightbulb_outline,
+                    value: lightBrightness, // Use the state variable from Step 1
+                    onChanged: (newValue) {
+                      // This function is called every time the slider moves
+                      
+                      // 1. Update the UI instantly
+                      setState(() {
+                        lightBrightness = newValue;
+                      });
+                      
+                      // 2. Send the new value to Firebase
+                      // We use .round() to send a clean integer (e.g., 50)
+                      // instead of a double (e.g., 50.1234)
+                      _updateControl('lightBrightness', newValue.round());
+                    },
+                  ),
+              ],
             ),
           ),
-// ...,
-
-        const SizedBox(height:30),
-
-        // --- ENVIRONMENTAL STATUS SECTION ---
-        Text(
-          'Environmental Status',
-          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 10),
-
-        // wrap - for responsiveness
-        Wrap(
-          spacing: 12.0, // horizontal space between cards
-          runSpacing: 12.0, // vertical space between rows of cards
-          children: [
-            StatusCard(
-              title: 'Ammonia Level',
-              data: ammoniaLevel, // data from ESP32
-              unit: '%',
-              icon: Icons.dangerous_outlined,
-              iconColor: Colors.green,
-            ),
-            StatusCard(
-              title: 'Temperature',
-              data: temperature, // data from ESP32
-              unit: '°C',
-              icon: Icons.thermostat,
-              iconColor: Colors.redAccent,
-            ),
-            StatusCard(
-              title: 'Humidity',
-              data: humidity, // data from ESP32
-              unit: '%',
-              icon: Icons.water_drop_outlined,
-              iconColor: Colors.blueAccent,
-            ),
-          ],
-        ),
-              // --- CONTROLS SECTION ---
-              const SizedBox(height: 30),
-
-              Text(
-                'Controls',
-                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-
-              Wrap(
-                spacing: 12.0, // horizontal space
-                runSpacing: 12.0, // vertical space
-                children: [
-                  // --- EXHAUST FAN CARD ---
-                  ControlCard(
-                    title: 'Exhaust Fan',
-                    icon: Icons.air_outlined, 
-                    isOn: isExhaustFanOn,
-                    onChanged: (bool value) {
-                      setState(() {
-                        isExhaustFanOn = value; // Update UI instantly
-                      });
-                      _updateControl('exhaustFan', value); // Send command to Firebase
-                    },
-                  ),
-
-                  // --- INTAKE FAN CARD ---
-                  ControlCard(
-                    title: 'Intake Fan',
-                    icon: Icons.air_outlined, 
-                    isOn: isIntakeFanOn,
-                    onChanged: (bool value) {
-                      setState(() {
-                        isIntakeFanOn = value;
-                      });
-                      _updateControl('intakeFan', value); 
-                    },
-                  ),
-
-                  // --- HEATER CARD ---
-                  ControlCard(
-                    title: 'Heater',
-                    icon: Icons.whatshot_outlined, 
-                    isOn: isHeaterOn,
-                    onChanged: (bool value) {
-                      setState(() {
-                        isHeaterOn = value;
-                      });
-                      _updateControl('heater', value);
-                    },
-                  ),
-                ],
-              )
-        ]),
       ),
-      ),
-    ),
     );
   }
 }
@@ -400,11 +432,17 @@ class StatusCard extends StatelessWidget {
                 const SizedBox(width: 5),
                 Text(
                   data, // data from ESP32 will go here
-                  style: GoogleFonts.inter(fontSize: 19.5, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 19.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   unit, // units like "%" or "°C"
-                  style: GoogleFonts.inter(fontSize: 19.5, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 19.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -448,7 +486,8 @@ class ControlCard extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distributes space
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween, // Distributes space
           children: [
             // --- Row for Icon and Switch ---
             Row(
@@ -463,7 +502,9 @@ class ControlCard extends StatelessWidget {
                     value: isOn,
                     onChanged: onChanged,
                     activeThumbColor: Colors.white, // Color of the switch knob
-                    activeTrackColor: Colors.white.withAlpha(128), // 0.5 opacity
+                    activeTrackColor: Colors.white.withAlpha(
+                      128,
+                    ), // 0.5 opacity
                   ),
                 ),
               ],
@@ -483,10 +524,7 @@ class ControlCard extends StatelessWidget {
                 ),
                 Text(
                   isOn ? 'On' : 'Off',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: statusColor,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 14, color: statusColor),
                 ),
               ],
             ),
@@ -497,7 +535,83 @@ class ControlCard extends StatelessWidget {
   }
 }
 
-// TIME AND DATE 
+// REUSABLE WIDGET FOR SLIDER CONTROLS
+class SliderControlCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final double value; // The current brightness (0-100)
+  final Function(double) onChanged; // Function to call when slider moves
+
+  const SliderControlCard({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Row for Title and Icon ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: const Color(0xFFF9A825), size: 30),
+                    const SizedBox(width: 12),
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                // --- Text to show the current % value ---
+                Text(
+                  '${value.round()}%', // e.g., "50%"
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFF9A825),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10), // Space
+
+            // --- The Slider Itself ---
+            Slider(
+              value: value, // The current value from our state
+              min: 0.0,     // Minimum brightness
+              max: 100.0,   // Maximum brightness
+              divisions: 100, // Snaps to 1% increments
+              label: '${value.round()}%', // Label that pops up on drag
+              activeColor: const Color(0xFFF9A825), // Slider "on" color
+              inactiveColor: Colors.grey.shade300, // Slider "off" color
+              onChanged: onChanged, // Function to call when user drags
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// TIME AND DATE
 class LiveClock extends StatefulWidget {
   const LiveClock({super.key});
 
@@ -514,9 +628,12 @@ class _LiveClockState extends State<LiveClock> {
     super.initState();
     // Initialize the time when the widget is created
     _dateTime = _formatDateTime(DateTime.now());
-    
+
     // Create a timer that updates the time every minute
-    _timer = Timer.periodic(const Duration(minutes: 1), (Timer t) => _updateTime());
+    _timer = Timer.periodic(
+      const Duration(minutes: 1),
+      (Timer t) => _updateTime(),
+    );
   }
 
   @override
