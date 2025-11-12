@@ -9,6 +9,10 @@ import '../widgets/control_card.dart';
 import 'sensor_history.dart';
 import 'actuator_history.dart';
 
+import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
+import 'package:web_socket_channel/io.dart'; // for websocket
+import 'dart:convert'; // for json decoding
+
 class MyHomePage extends StatefulWidget {
   final String title;
   const MyHomePage({super.key, required this.title});
@@ -18,60 +22,132 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // SENSOR VARIABLES
+  // VARIABLES FOR SENSOR DATA
   String ammoniaLevel = "--";
   String temperature = "--";
   String humidity = "--";
+  String lightLevel = "--";
 
-  // CONTROL STATES
+  // STATE VARIABLES FOR CONTROLS
   bool isExhaustFanOn = false;
   bool isIntakeFanOn = false;
   bool isHeaterOn = false;
+  double lightBrightness = 0.0;
 
-  late DatabaseReference _sensorDataRef;
-  late DatabaseReference _controlsRef;
+  // WebRTC VARIABLES
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  RTCPeerConnection? _pc;
+  IOWebSocketChannel? _channel;
+
+  late DatabaseReference _sensorDataRef; // Reference for sensor data
+  late DatabaseReference _controlsRef; // Reference for controls
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
 
   @override
   void initState() {
     super.initState();
+    _connect(); // WebRTC INIT
+
+    // Point the reference to the "node" or "path" in your database
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
     _controlsRef = FirebaseDatabase.instance.ref('controls');
 
-    _sensorDataSubscription = _sensorDataRef.onValue.listen((event) {
+    // Listen to the sensor data stream
+    _sensorDataSubscription = _sensorDataRef.onValue.listen((
+      DatabaseEvent event,
+    ) {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         setState(() {
           ammoniaLevel = data['ammonia']?.toString() ?? '--';
           temperature = data['temperature']?.toString() ?? '--';
           humidity = data['humidity']?.toString() ?? '--';
+          lightLevel = data['lightLevel']?.toString() ?? '--';
+        });
+      } else {
+        // Handle case where data doesn't exist
+        setState(() {
+          ammoniaLevel = "--";
+          temperature = "--";
+          humidity = "--";
+          lightLevel = "--";
         });
       }
     });
 
-    _controlsSubscription = _controlsRef.onValue.listen((event) {
+    //Listen to the controls data stream
+    _controlsSubscription = _controlsRef.onValue.listen((DatabaseEvent event) {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         setState(() {
+          // Use '?? false' to default to 'Off' if data is missing
           isExhaustFanOn = data['exhaustFan'] ?? false;
           isIntakeFanOn = data['intakeFan'] ?? false;
           isHeaterOn = data['heater'] ?? false;
+          lightBrightness = (data['lightBrightness'] ?? 0.0).toDouble();
         });
       }
+      // If snapshot doesn't exist, they will keep their default values
     });
   }
 
-  void _updateControl(String controlName, bool value) {
+  // FUNCTION TO SEND CONTROL COMMANDS
+  void _updateControl(String controlName, dynamic value) {
+    // This will update a specific child, e.g., "controls/exhaustFan"
     _controlsRef.child(controlName).set(value);
+  }
+
+  Future<void> _connect() async {
+    await _remoteRenderer.initialize();
+
+    _pc = await createPeerConnection({
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'},
+      ],
+    });
+
+    _pc!.onTrack = (event) {
+      if (event.streams.isNotEmpty) {
+        setState(() {
+          _remoteRenderer.srcObject = event.streams[0];
+        });
+      }
+    };
+
+    // Connect to signaling server
+    _channel = IOWebSocketChannel.connect(
+      'ws://100.76.87.115:8765',
+    ); // replace with tailscale ip x.x.x.x:8765
+
+    _channel!.stream.listen((message) async {
+      final data = json.decode(message);
+      if (data['type'] == 'answer') {
+        await _pc!.setRemoteDescription(
+          RTCSessionDescription(data['sdp'], 'answer'),
+        );
+      }
+    });
+
+    // Create and send offer
+    RTCSessionDescription offer = await _pc!.createOffer();
+    await _pc!.setLocalDescription(offer);
+
+    _channel!.sink.add(json.encode({'type': 'offer', 'sdp': offer.sdp}));
   }
 
   @override
   void dispose() {
+    // ALWAYS cancel the subscription when the widget is removed
     _sensorDataSubscription?.cancel();
     _controlsSubscription?.cancel();
+    _remoteRenderer.dispose();
+    _pc?.close();
+    _channel?.sink.close();
     super.dispose();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -126,18 +202,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   color: Colors.white,
                   elevation: 1,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(19),
+                    padding: EdgeInsets.all(19), // Keeping your padding
                     child: Container(
                       height: 300,
                       width: double.infinity,
-                      color: Colors.black,
-                      child: const Center(
-                        child: Text(
-                          'Video feed is offline',
-                          style: TextStyle(color: Colors.white),
-                        ),
+                      decoration: BoxDecoration(
+                        color: Colors.black, // Background color
+                        // This makes the video player have rounded corners
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      // This clips the video to the container's rounded shape
+                      clipBehavior: Clip.antiAlias,
+                      child: RTCVideoView(
+                        _remoteRenderer,
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                        mirror: false,
                       ),
                     ),
                   ),
@@ -147,33 +230,53 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: GoogleFonts.inter(
                         fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    StatusCard(
-                      title: 'Ammonia Level',
-                      data: ammoniaLevel,
-                      unit: '%',
-                      icon: Icons.dangerous_outlined,
-                      iconColor: Colors.green,
-                    ),
-                    StatusCard(
-                      title: 'Temperature',
-                      data: temperature,
-                      unit: '°C',
-                      icon: Icons.thermostat,
-                      iconColor: Colors.redAccent,
-                    ),
-                    StatusCard(
-                      title: 'Humidity',
-                      data: humidity,
-                      unit: '%',
-                      icon: Icons.water_drop_outlined,
-                      iconColor: Colors.blueAccent,
-                    ),
-                  ],
-                ),
+                 Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Ammonia\nLevel',
+                          data: ammoniaLevel,
+                          unit: '%',
+                          icon: Icons.dangerous_outlined,
+                          iconColor: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 3.0),
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Temperature',
+                          data: temperature,
+                          unit: '°C',
+                          icon: Icons.thermostat,
+                          iconColor: Colors.redAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 3.0),
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Humidity',
+                          data: humidity,
+                          unit: '%',
+                          icon: Icons.water_drop_outlined,
+                          iconColor: Colors.blueAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 3.0),
+                      Expanded(
+                        child: StatusCard(
+                          title: 'Light Level',
+                          data: lightLevel,
+                          unit: 'lux',
+                          icon: Icons.wb_sunny_outlined,
+                          iconColor: Colors.yellowAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
                 const SizedBox(height: 30),
                 Text('Controls',
                     style: GoogleFonts.inter(
@@ -210,6 +313,18 @@ class _MyHomePageState extends State<MyHomePage> {
                         _updateControl('heater', value);
                       },
                     ),
+                    const SizedBox(height: 12),
+                SliderControlCard(
+                    title: 'Light Bulb',
+                    icon: Icons.lightbulb_outline,
+                    value: lightBrightness,
+                    onChanged: (newValue) {
+                      setState(() {
+                        lightBrightness = newValue;
+                      });
+                      _updateControl('lightBrightness', newValue.round());
+                    },
+                  ),
                   ],
                 ),
                 const SizedBox(height: 30),
