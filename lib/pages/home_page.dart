@@ -226,61 +226,101 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                Text('Environmental Status',
-                    style: GoogleFonts.inter(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                 Column(
+                Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: StatusCard(
-                          title: 'Ammonia\nLevel',
-                          data: ammoniaLevel,
-                          unit: '%',
-                          icon: Icons.dangerous_outlined,
-                          iconColor: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(width: 3.0),
-                      Expanded(
-                        child: StatusCard(
-                          title: 'Temperature',
-                          data: temperature,
-                          unit: '°C',
-                          icon: Icons.thermostat,
-                          iconColor: Colors.redAccent,
-                        ),
-                      ),
-                      const SizedBox(width: 3.0),
-                      Expanded(
-                        child: StatusCard(
-                          title: 'Humidity',
-                          data: humidity,
-                          unit: '%',
-                          icon: Icons.water_drop_outlined,
-                          iconColor: Colors.blueAccent,
-                        ),
-                      ),
-                      const SizedBox(width: 3.0),
-                      Expanded(
-                        child: StatusCard(
-                          title: 'Light Level',
-                          data: lightLevel,
-                          unit: 'lux',
-                          icon: Icons.wb_sunny_outlined,
-                          iconColor: Colors.yellowAccent,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Environmental Status',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SensorHistoryPage()),
+                      );
+                    },
                   ),
                 ],
               ),
+                const SizedBox(height: 10),
+                 Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatusCard(
+                            title: 'Ammonia Level',
+                            data: ammoniaLevel,
+                            unit: '%',
+                            icon: Icons.dangerous_outlined,
+                            iconColor: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 3.0),
+                        Expanded(
+                          child: StatusCard(
+                            title: 'Temperature',
+                            data: temperature,
+                            unit: '°C',
+                            icon: Icons.thermostat,
+                            iconColor: Colors.redAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3.0), // spacing between rows
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatusCard(
+                            title: 'Humidity',
+                            data: humidity,
+                            unit: '%',
+                            icon: Icons.water_drop_outlined,
+                            iconColor: Colors.blueAccent,
+                          ),
+                        ),
+                        const SizedBox(width: 3.0),
+                        Expanded(
+                          child: StatusCard(
+                            title: 'Light Level',
+                            data: lightLevel,
+                            unit: 'lux',
+                            icon: Icons.wb_sunny_outlined,
+                            iconColor: Colors.yellowAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 30),
-                Text('Controls',
+                Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Controls',
                     style: GoogleFonts.inter(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ActuatorHistoryPage()),
+                      );
+                    },
+                  ),
+                ],
+              ),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 12,
@@ -328,63 +368,63 @@ class _MyHomePageState extends State<MyHomePage> {
                   ],
                 ),
                 const SizedBox(height: 30),
-                Text('History',
-                    style: GoogleFonts.inter(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // aligns children to left
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) =>  SensorHistoryPage()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 255, 230, 106),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                        label: const Text(
-                          'View Sensor History',
-                          style: TextStyle(fontSize: 16, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ActuatorHistoryPage()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 255, 230, 106),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                        label: const Text(
-                          'View Actuator History',
-                          style: TextStyle(fontSize: 16, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30), // space below the button
-                  ],
-                )
+                // Text('History',
+                //     style: GoogleFonts.inter(
+                //         fontSize: 20, fontWeight: FontWeight.bold)),
+                // const SizedBox(height: 10),
+                // Column(
+                //   crossAxisAlignment: CrossAxisAlignment.start, // aligns children to left
+                //   children: [
+                //     Align(
+                //       alignment: Alignment.centerLeft,
+                //       child: ElevatedButton.icon(
+                //         onPressed: () {
+                //           Navigator.push(
+                //             context,
+                //             MaterialPageRoute(builder: (context) =>  SensorHistoryPage()),
+                //           );
+                //         },
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: const Color.fromARGB(255, 255, 230, 106),
+                //           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(12),
+                //           ),
+                //         ),
+                //         icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                //         label: const Text(
+                //           'View Sensor History',
+                //           style: TextStyle(fontSize: 16, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                //         ),
+                //       ),
+                //     ),
+                //     const SizedBox(height: 10),
+                //     Align(
+                //       alignment: Alignment.centerLeft,
+                //       child: ElevatedButton.icon(
+                //         onPressed: () {
+                //           Navigator.push(
+                //             context,
+                //             MaterialPageRoute(builder: (context) => const ActuatorHistoryPage()),
+                //           );
+                //         },
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: const Color.fromARGB(255, 255, 230, 106),
+                //           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(12),
+                //           ),
+                //         ),
+                //         icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                //         label: const Text(
+                //           'View Actuator History',
+                //           style: TextStyle(fontSize: 16, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                //         ),
+                //       ),
+                //     ),
+                //     const SizedBox(height: 30), // space below the button
+                //   ],
+                // )
               ],             
             ),
           ),

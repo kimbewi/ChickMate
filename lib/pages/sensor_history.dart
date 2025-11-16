@@ -12,21 +12,26 @@ class SensorHistoryPage extends StatefulWidget {
 
 class _SensorHistoryPageState extends State<SensorHistoryPage> {
   List sensors = [];
+  List filteredSensors = [];
   bool isLoading = true;
 
-  // 🔧 CHANGE THIS TO YOUR PC’s IP address
-  final String baseUrl = 'http://192.168.100.88:5000/api/sensors';
+  final String baseUrl = 'http://100.76.87.115:5000/api/sensors';
 
-  // Function to fetch sensor data from Node.js API
+  @override
+  void initState() {
+    super.initState();
+    fetchSensors();
+  }
+
   Future<void> fetchSensors() async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
 
       if (response.statusCode == 200) {
         final List data = json.decode(response.body);
-
         setState(() {
           sensors = data;
+          filteredSensors = data;
           isLoading = false;
         });
       } else {
@@ -39,21 +44,103 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchSensors();
-  }
-
   String formatTimestamp(String isoTime) {
     try {
-      final dateTime = DateTime.parse(isoTime).toLocal(); // convert UTC → local
+      final dateTime = DateTime.parse(isoTime).toLocal();
       return DateFormat('MMMM dd, yyyy – hh:mm a').format(dateTime);
     } catch (e) {
-      return isoTime; // fallback
+      return isoTime;
     }
   }
 
+  // --- 📅 FILTER FUNCTIONS ---
+  void filterByDate(DateTime date) {
+    setState(() {
+      filteredSensors = sensors.where((sensor) {
+        final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
+        if (timestamp == null) return false;
+        return timestamp.year == date.year &&
+            timestamp.month == date.month &&
+            timestamp.day == date.day;
+      }).toList();
+    });
+  }
+
+  void filterByDateRange(DateTimeRange range) {
+    setState(() {
+      filteredSensors = sensors.where((sensor) {
+        final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
+        if (timestamp == null) return false;
+        return timestamp.isAfter(range.start.subtract(const Duration(days: 1))) &&
+            timestamp.isBefore(range.end.add(const Duration(days: 1)));
+      }).toList();
+    });
+  }
+
+  void resetFilter() {
+    setState(() {
+      filteredSensors = sensors;
+    });
+  }
+
+  void showFilterOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.today),
+                title: const Text("Filter by Specific Date"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2024),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) filterByDate(picked);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range),
+                title: const Text("Filter by Date Range"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final DateTimeRange? range = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2024),
+                    lastDate: DateTime(2100),
+                    initialDateRange: DateTimeRange(
+                      start: DateTime.now().subtract(const Duration(days: 7)),
+                      end: DateTime.now(),
+                    ),
+                  );
+                  if (range != null) filterByDateRange(range);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.refresh),
+                title: const Text("Reset Filter"),
+                onTap: () {
+                  Navigator.pop(context);
+                  resetFilter();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // --- 🧱 UI ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,19 +149,25 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
         backgroundColor: const Color(0xFFFFE66A),
         foregroundColor: Colors.black87,
         elevation: 2,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: showFilterOptions,
+            tooltip: "Filter Data",
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : sensors.isEmpty
+          : filteredSensors.isEmpty
               ? const Center(child: Text("No sensor data found"))
               : RefreshIndicator(
                   onRefresh: fetchSensors,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: sensors.length,
+                    itemCount: filteredSensors.length,
                     itemBuilder: (context, index) {
-                      final sensor = sensors[index];
-
+                      final sensor = filteredSensors[index];
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         elevation: 2,
@@ -82,10 +175,11 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: ListTile(
-                          leading: const Icon(Icons.sensors, color: Colors.amber),
-                          title: Text(
+                          leading:
+                              const Icon(Icons.sensors, color: Colors.amber),
+                          title: const Text(
                             "Sensor Reading",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +191,8 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
                               const SizedBox(height: 4),
                               Text(
                                 "Date & Time: ${formatTimestamp(sensor['timestamp'])}",
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
                               ),
                             ],
                           ),
