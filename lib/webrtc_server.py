@@ -191,7 +191,7 @@ async def run_signaling(websocket):
 
 async def main():
     # !!! IMPORTANT: Replace with your Tailscale IP !!!
-    uri = "ws://100.95.143.26:8765"
+    uri = "ws://100.76.87.115:8765"
 
     logger.info(f"Attempting to connect to signaling server at {uri}")
     while True:
