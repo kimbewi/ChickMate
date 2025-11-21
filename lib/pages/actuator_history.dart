@@ -24,7 +24,7 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
 
   Future<void> fetchActuatorData() async {
     final response =
-        await http.get(Uri.parse('http://100.76.87.115:5000/api/actuators'));
+        await http.get(Uri.parse('http://100.68.113.75:5000/api/actuators'));
     if (response.statusCode == 200) {
       setState(() {
         actuators = json.decode(response.body);
