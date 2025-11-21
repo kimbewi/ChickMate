@@ -8,6 +8,7 @@ import '../widgets/status_card.dart';
 import '../widgets/control_card.dart';
 import 'sensor_history.dart';
 import 'actuator_history.dart';
+import 'full_screen.dart';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
 import 'package:web_socket_channel/io.dart'; // for websocket
@@ -117,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Connect to signaling server
     _channel = IOWebSocketChannel.connect(
-      'ws://100.76.87.115:8765',
+      'ws://100.68.113.75:8765',
     ); // replace with tailscale ip x.x.x.x:8765
 
     _channel!.stream.listen((message) async {
@@ -158,12 +159,12 @@ class _MyHomePageState extends State<MyHomePage> {
         elevation: 2,
         title: Row(
           children: [
-            Image.asset('assets/images/chickmateLogo.png', height: 40),
+            Image.asset('assets/images/appLogo.png', height: 40),
             const SizedBox(width: 8),
             Text(
               "ChickMate",
               style: GoogleFonts.inter(
-                fontSize: 30.0,
+                fontSize: 28.0,
                 fontWeight: FontWeight.w800,
                 color: const Color.fromRGBO(32, 32, 32, 1.0),
               ),
@@ -199,32 +200,65 @@ class _MyHomePageState extends State<MyHomePage> {
                         fontSize: 20, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 10),
                 Card(
-                  color: Colors.white,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(19), // Keeping your padding
-                    child: Container(
-                      height: 300,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.black, // Background color
-                        // This makes the video player have rounded corners
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      // This clips the video to the container's rounded shape
-                      clipBehavior: Clip.antiAlias,
-                      child: RTCVideoView(
-                        _remoteRenderer,
-                        objectFit:
-                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                        mirror: false,
-                      ),
+                color: Colors.white,
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(19),
+                  child: Container(
+                    height: 300,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    // WE USE A STACK TO OVERLAY THE BUTTON
+                    child: Stack(
+                      children: [
+                        // 1. The Video Player
+                        Positioned.fill(
+                          child: RTCVideoView(
+                            _remoteRenderer,
+                            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+                            mirror: false,
+                          ),
+                        ),
+                        
+                        // 2. The Full Screen Button (Bottom Right)
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5), // Semi-transparent background
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.fullscreen, color: Colors.white),
+                              tooltip: "Full Screen",
+                              onPressed: () {
+                                // Navigate to the full screen page
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FullScreenVideoPage(
+                                      renderer: _remoteRenderer,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+              ),
+// --- END OF UPDATED CARD ---
                 const SizedBox(height: 30),
                 Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

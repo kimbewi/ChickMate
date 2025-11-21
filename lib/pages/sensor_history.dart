@@ -15,7 +15,7 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
   List filteredSensors = [];
   bool isLoading = true;
 
-  final String baseUrl = 'http://100.76.87.115:5000/api/sensors';
+  final String baseUrl = 'http://100.68.113.75:5000/api/sensors';
 
   @override
   void initState() {
