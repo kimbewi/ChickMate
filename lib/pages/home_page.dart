@@ -93,6 +93,27 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> _disconnect() async {
+    _remoteRenderer.srcObject = null;
+    if (_channel != null) {
+      await _channel!.sink.close();
+      _channel = null;
+    }
+    if (_pc != null) {
+      await _pc!.close();
+      _pc = null;
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+   
+  Future<void> _handleRefresh() async {
+    await _disconnect();
+    await Future.delayed(const Duration(milliseconds: 500));
+    await _connect();
+  }
+
   // FUNCTION TO SEND CONTROL COMMANDS
   void _updateControl(String controlName, dynamic value) {
     // This will update a specific child, e.g., "controls/exhaustFan"
@@ -191,6 +212,12 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
+          child: RefreshIndicator(
+            onRefresh: _handleRefresh, 
+            color: Colors.orange,    
+            
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,6 +491,8 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       ),
+      ),
+    ),
     );
   }
 }
