@@ -8,7 +8,9 @@ import '../widgets/status_card.dart';
 import '../widgets/control_card.dart';
 import 'sensor_history.dart';
 import 'actuator_history.dart';
+import 'notification_page.dart';
 import 'full_screen.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
 import 'package:web_socket_channel/io.dart'; // for websocket
@@ -44,11 +46,20 @@ class _MyHomePageState extends State<MyHomePage> {
   late DatabaseReference _controlsRef; // Reference for controls
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
+  bool isViewingNotifications = false;
+  int unreadCount = 0;
+  Timer? _notificationTimer;
 
   @override
   void initState() {
     super.initState();
     _connect(); // WebRTC INIT
+    fetchUnreadCount();
+
+     _notificationTimer = Timer.periodic(
+    const Duration(seconds: 5),
+    (_) => fetchUnreadCount(),
+  );
 
     // Point the reference to the "node" or "path" in your database
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
@@ -92,6 +103,25 @@ class _MyHomePageState extends State<MyHomePage> {
       // If snapshot doesn't exist, they will keep their default values
     });
   }
+
+Future<void> fetchUnreadCount() async {
+  if (!mounted || isViewingNotifications) return;
+
+  try {
+    final response = await http.get(
+      Uri.parse("http://192.168.139.1:5000/api/notifications/unread-count"),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        unreadCount = data['unreadCount'] ?? 0;
+      });
+    }
+  } catch (e) {
+    debugPrint("❌ Failed to fetch unread count: $e");
+  }
+}
 
   Future<void> _disconnect() async {
     _remoteRenderer.srcObject = null;
@@ -160,7 +190,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    // ALWAYS cancel the subscription when the widget is removed
+    _notificationTimer?.cancel(); // cancel timer FIRST
     _sensorDataSubscription?.cancel();
     _controlsSubscription?.cancel();
     _remoteRenderer.dispose();
@@ -169,35 +199,153 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(253, 253, 253, 1.0),
-        automaticallyImplyLeading: false,
-        elevation: 2,
-        title: Row(
-          children: [
-            Image.asset('assets/images/appLogo.png', height: 40),
-            const SizedBox(width: 8),
-            Text(
-              "ChickMate",
-              style: GoogleFonts.inter(
-                fontSize: 28.0,
-                fontWeight: FontWeight.w800,
-                color: const Color.fromRGBO(32, 32, 32, 1.0),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(60), // <-- increase height here
+        child: AppBar(
+          backgroundColor: const Color.fromRGBO(253, 253, 253, 1.0),
+          automaticallyImplyLeading: false,
+          elevation: 2,
+          title: Row(
+            children: [
+              Image.asset('assets/images/appLogo.png', height: 45),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "ChickMate",
+                    style: GoogleFonts.inter(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Color.fromRGBO(32, 32, 32, 1.0),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  SizedBox(height: 18, child: LiveClock()),
+                ],
               ),
-            ),
-          ],
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: Center(child: LiveClock()),
+            ],
           ),
+          actions: [
+          // Wrap IconButton in a Stack
+          Stack(
+            children: [
+              IconButton(
+  icon: const Icon(
+    Icons.notifications_none_outlined,
+    color: Color.fromRGBO(32, 32, 32, 1.0),
+  ),
+  tooltip: 'Notifications',
+  onPressed: () async {
+  try {
+    setState(() {
+      isViewingNotifications = true;
+      unreadCount = 0; // instant UI reset
+    });
+
+    await http.put(
+      Uri.parse("http://192.168.139.1:5000/api/notifications/mark-all-read"),
+    );
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationPage()),
+    );
+
+    setState(() {
+      isViewingNotifications = false;
+    });
+
+    // DO NOT force fetch immediately
+    // let polling handle it naturally
+  } catch (e) {
+    debugPrint("Failed to mark notifications as read: $e");
+  }
+},
+),
+              // IconButton(
+              //   icon: const Icon(
+              //     Icons.notifications_none_outlined,
+              //     color: Color.fromRGBO(32, 32, 32, 1.0),
+              //   ),
+              //   tooltip: 'Notifications',
+              //   onPressed: () async {
+              //     // 1️⃣ Instantly reset badge in UI
+              //     setState(() {
+              //       unreadCount = 0;
+              //     });
+
+              //     // 2️⃣ Tell backend notifications are read
+              //     await http.post(
+              //       Uri.parse("http://192.168.139.1:5000/api/notifications/mark-read"),
+              //     );
+
+              //     // 3️⃣ Navigate to notification page
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(builder: (_) => const NotificationPage()),
+              //     );
+              //   },
+              //   // onPressed: () async {
+              //   //   await Navigator.push(
+              //   //     context,
+              //   //     MaterialPageRoute(builder: (context) => NotificationPage()),
+              //   //   );
+              //   //   fetchUnreadCount(); // refresh count when returning
+              //   // },
+              // ),
+
+              // The red badge
+              if (unreadCount > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
         ],
+        //   actions: [            
+        //   IconButton(
+        //     icon: const Icon(
+        //       Icons.notifications_none_outlined,
+        //       color: Color.fromRGBO(32, 32, 32, 1.0),
+        //     ),
+        //     tooltip: 'Notifications',
+        //     onPressed: () {
+        //       Navigator.push(
+        //                 context,
+        //                 MaterialPageRoute(builder: (context) => NotificationPage()),
+        //               );
+        //     },
+        //   ),
+        //   const SizedBox(width: 8),
+        // ],
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(

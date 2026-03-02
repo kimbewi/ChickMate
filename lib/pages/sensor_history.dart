@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SensorHistoryPage extends StatefulWidget {
   const SensorHistoryPage({super.key});
@@ -15,7 +16,7 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
   List filteredSensors = [];
   bool isLoading = true;
 
-  final String baseUrl = 'http://100.68.113.75:5000/api/sensors';
+  final String baseUrl = 'http://192.168.139.1:5000/api/sensors';
 
   @override
   void initState() {
@@ -44,14 +45,49 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
     }
   }
 
-  String formatTimestamp(String isoTime) {
-    try {
-      final dateTime = DateTime.parse(isoTime).toLocal();
-      return DateFormat('MMMM dd, yyyy – hh:mm a').format(dateTime);
-    } catch (e) {
-      return isoTime;
-    }
+  String displaySensor(dynamic value, {String unit = ''}) {
+    if (value is num) return "$value $unit";     // valid number
+    if (value is String) return value;           // backend error string, show as is
+    return value.toString();                     // fallback
   }
+
+  // String formatTimestamp(String isoTime) {
+  //   try {
+  //     final dateTime = DateTime.parse(isoTime).toLocal();
+  //     return DateFormat('MMMM dd, yyyy – hh:mm a').format(dateTime);
+  //   } catch (e) {
+  //     return isoTime;
+  //   }
+  // }
+
+  String formatTimestamp(String? isoTime) {
+  if (isoTime == null || isoTime.isEmpty) return "No timestamp";
+
+  // Example: 2026-01-07T14:30:00+08:00
+  try {
+    final date = isoTime.substring(0, 10); // YYYY-MM-DD
+    final time = isoTime.substring(11, 16); // HH:mm
+
+    final year = date.substring(0, 4);
+    final month = date.substring(5, 7);
+    final day = date.substring(8, 10);
+
+    final hour = int.parse(time.substring(0, 2));
+    final minute = time.substring(3, 5);
+
+    final dt = DateTime(
+      int.parse(year),
+      int.parse(month),
+      int.parse(day),
+      hour,
+      int.parse(minute),
+    );
+
+    return DateFormat('MMMM dd, yyyy – hh:mm a').format(dt);
+  } catch (_) {
+    return isoTime;
+  }
+}
 
   // --- 📅 FILTER FUNCTIONS ---
   void filterByDate(DateTime date) {
@@ -145,7 +181,10 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sensor History"),
+        title: Text(
+          "Sensor History",
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
         backgroundColor: const Color(0xFFFFE66A),
         foregroundColor: Colors.black87,
         elevation: 2,
@@ -184,10 +223,10 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Temperature: ${sensor['temperature']} °C"),
-                              Text("Humidity: ${sensor['humidity']} %"),
-                              Text("Ammonia: ${sensor['ammonia']} ppm"),
-                              Text("Light: ${sensor['light']} lx"),
+                              Text("Temperature: ${displaySensor(sensor['temperature'], unit: '°C')}"),
+                              Text("Humidity: ${displaySensor(sensor['humidity'], unit: '%')}"),
+                              Text("Ammonia: ${displaySensor(sensor['ammonia'], unit: 'ppm')}"),
+                              Text("Light: ${displaySensor(sensor['light'], unit: 'lx')}"),
                               const SizedBox(height: 4),
                               Text(
                                 "Date & Time: ${formatTimestamp(sensor['timestamp'])}",

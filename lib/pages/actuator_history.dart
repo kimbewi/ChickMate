@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:google_fonts/google_fonts.dart';
 
 class ActuatorHistoryPage extends StatefulWidget {
   const ActuatorHistoryPage({Key? key}) : super(key: key);
@@ -24,7 +25,7 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
 
   Future<void> fetchActuatorData() async {
     final response =
-        await http.get(Uri.parse('http://100.68.113.75:5000/api/actuators'));
+        await http.get(Uri.parse('http://10.156.160.254:5000/api/actuators'));
     if (response.statusCode == 200) {
       setState(() {
         actuators = json.decode(response.body);
@@ -37,14 +38,43 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     }
   }
 
-  String formatTimestamp(String? isoTime) {
+//   String formatTimestamp(String? isoTime) {
+//   if (isoTime == null || isoTime.isEmpty) return "No timestamp";
+//   try {
+//     final utcTime = DateTime.parse(isoTime).toUtc();
+//     final manila = tz.getLocation('Asia/Manila');
+//     final manilaTime = tz.TZDateTime.from(utcTime, manila);
+//     return DateFormat('MMMM dd, yyyy – hh:mm a').format(manilaTime);
+//   } catch (e) {
+//     return isoTime;
+//   }
+// }
+
+String formatTimestamp(String? isoTime) {
   if (isoTime == null || isoTime.isEmpty) return "No timestamp";
+
+  // Example: 2026-01-07T14:30:00+08:00
   try {
-    final utcTime = DateTime.parse(isoTime).toUtc();
-    final manila = tz.getLocation('Asia/Manila');
-    final manilaTime = tz.TZDateTime.from(utcTime, manila);
-    return DateFormat('MMMM dd, yyyy – hh:mm a').format(manilaTime);
-  } catch (e) {
+    final date = isoTime.substring(0, 10); // YYYY-MM-DD
+    final time = isoTime.substring(11, 16); // HH:mm
+
+    final year = date.substring(0, 4);
+    final month = date.substring(5, 7);
+    final day = date.substring(8, 10);
+
+    final hour = int.parse(time.substring(0, 2));
+    final minute = time.substring(3, 5);
+
+    final dt = DateTime(
+      int.parse(year),
+      int.parse(month),
+      int.parse(day),
+      hour,
+      int.parse(minute),
+    );
+
+    return DateFormat('MMMM dd, yyyy – hh:mm a').format(dt);
+  } catch (_) {
     return isoTime;
   }
 }
@@ -170,7 +200,10 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Actuator History"),
+        title: Text(
+          "Actuator History",
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
         backgroundColor: const Color(0xFFFFE66A),
         foregroundColor: Colors.black87,
         elevation: 2,
