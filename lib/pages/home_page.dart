@@ -16,6 +16,8 @@ import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
 import 'package:web_socket_channel/io.dart'; // for websocket
 import 'dart:convert'; // for json decoding
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 class MyHomePage extends StatefulWidget {
   final String title;
   const MyHomePage({super.key, required this.title});
@@ -55,6 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _connect(); // WebRTC INIT
     fetchUnreadCount();
+    setupFCM();
 
      _notificationTimer = Timer.periodic(
     const Duration(seconds: 5),
@@ -103,6 +106,28 @@ class _MyHomePageState extends State<MyHomePage> {
       // If snapshot doesn't exist, they will keep their default values
     });
   }
+
+Future<void> setupFCM() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Ask permission
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  // Get device token
+  String? token = await messaging.getToken();
+  print("🔥 DEVICE TOKEN: $token");
+
+  // Send token to Node server
+  await http.post(
+    Uri.parse("http://192.168.0.104:5000/api/save-token"),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({"token": token}),
+  );
+}
 
 Future<void> fetchUnreadCount() async {
   if (!mounted || isViewingNotifications) return;
