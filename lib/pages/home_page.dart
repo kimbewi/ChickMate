@@ -109,7 +109,7 @@ Future<void> fetchUnreadCount() async {
 
   try {
     final response = await http.get(
-      Uri.parse("http://192.168.139.1:5000/api/notifications/unread-count"),
+      Uri.parse("http://192.168.0.104:5000/api/notifications/unread-count"),
     );
 
     if (response.statusCode == 200) {
@@ -231,120 +231,69 @@ Future<void> fetchUnreadCount() async {
             ],
           ),
           actions: [
-          // Wrap IconButton in a Stack
-          Stack(
-            children: [
-              IconButton(
-  icon: const Icon(
-    Icons.notifications_none_outlined,
-    color: Color.fromRGBO(32, 32, 32, 1.0),
-  ),
-  tooltip: 'Notifications',
-  onPressed: () async {
-  try {
-    setState(() {
-      isViewingNotifications = true;
-      unreadCount = 0; // instant UI reset
-    });
+            SizedBox(
+  width: 48, // typical IconButton size
+  height: 48,
+  child: Stack(
+    clipBehavior: Clip.none,
+    children: [
+      IconButton(
+        icon: const Icon(
+          Icons.notifications_none_outlined,
+          color: Color.fromRGBO(32, 32, 32, 1.0),
+        ),
+        tooltip: 'Notifications',
+        onPressed: () async {
+          setState(() {
+            isViewingNotifications = true;
+            unreadCount = 0;
+          });
 
-    await http.put(
-      Uri.parse("http://192.168.139.1:5000/api/notifications/mark-all-read"),
-    );
+          await http.put(
+            Uri.parse("http://192.168.0.104:5000/api/notifications/mark-all-read"),
+          );
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationPage()),
-    );
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationPage()),
+          );
 
-    setState(() {
-      isViewingNotifications = false;
-    });
-
-    // DO NOT force fetch immediately
-    // let polling handle it naturally
-  } catch (e) {
-    debugPrint("Failed to mark notifications as read: $e");
-  }
-},
-),
-              // IconButton(
-              //   icon: const Icon(
-              //     Icons.notifications_none_outlined,
-              //     color: Color.fromRGBO(32, 32, 32, 1.0),
-              //   ),
-              //   tooltip: 'Notifications',
-              //   onPressed: () async {
-              //     // 1️⃣ Instantly reset badge in UI
-              //     setState(() {
-              //       unreadCount = 0;
-              //     });
-
-              //     // 2️⃣ Tell backend notifications are read
-              //     await http.post(
-              //       Uri.parse("http://192.168.139.1:5000/api/notifications/mark-read"),
-              //     );
-
-              //     // 3️⃣ Navigate to notification page
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(builder: (_) => const NotificationPage()),
-              //     );
-              //   },
-              //   // onPressed: () async {
-              //   //   await Navigator.push(
-              //   //     context,
-              //   //     MaterialPageRoute(builder: (context) => NotificationPage()),
-              //   //   );
-              //   //   fetchUnreadCount(); // refresh count when returning
-              //   // },
-              // ),
-
-              // The red badge
-              if (unreadCount > 0)
-                Positioned(
-                  right: 6,
-                  top: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      '$unreadCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+          setState(() {
+            isViewingNotifications = false;
+          });
+        },
+      ),
+      if (unreadCount > 0)
+        Positioned(
+          right: 6,
+          top: 6,
+          child: IgnorePointer(  // <-- prevent blocking taps
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
                 ),
-            ],
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
-        ],
-        //   actions: [            
-        //   IconButton(
-        //     icon: const Icon(
-        //       Icons.notifications_none_outlined,
-        //       color: Color.fromRGBO(32, 32, 32, 1.0),
-        //     ),
-        //     tooltip: 'Notifications',
-        //     onPressed: () {
-        //       Navigator.push(
-        //                 context,
-        //                 MaterialPageRoute(builder: (context) => NotificationPage()),
-        //               );
-        //     },
-        //   ),
-        //   const SizedBox(width: 8),
-        // ],
+        ),
+    ],
+  ),
+),
+          ]
         ),
       ),
       body: Container(
