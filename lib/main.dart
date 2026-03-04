@@ -14,23 +14,45 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print("🔔 Background message: ${message.notification?.title}");
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    'high_importance_channel_v2',
+    'High Importance Notifications',
+    importance: Importance.high,
+    priority: Priority.high,
+    icon: 'app_logo', 
+  );
+
+  const NotificationDetails platformDetails =
+      NotificationDetails(android: androidDetails);
+
+  await flutterLocalNotificationsPlugin.show(
+    0,
+    message.notification?.title,
+    message.notification?.body,
+    platformDetails,
+  );
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ----- Initialize Firebase -----
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ----- Initialize timezone data -----
-  tz.initializeTimeZones(); // loads all timezone info
-  // Optionally, set default timezone to Manila if desired
-  // tz.setLocalLocation(tz.getLocation('Asia/Manila'));
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('app_logo'); // same icon
 
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  tz.initializeTimeZones(); 
 
   runApp(const MyApp());
 }

@@ -51,15 +51,6 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
     return value.toString();                     // fallback
   }
 
-  // String formatTimestamp(String isoTime) {
-  //   try {
-  //     final dateTime = DateTime.parse(isoTime).toLocal();
-  //     return DateFormat('MMMM dd, yyyy – hh:mm a').format(dateTime);
-  //   } catch (e) {
-  //     return isoTime;
-  //   }
-  // }
-
   String formatTimestamp(String? isoTime) {
   if (isoTime == null || isoTime.isEmpty) return "No timestamp";
 
@@ -89,29 +80,62 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
   }
 }
 
-  // --- 📅 FILTER FUNCTIONS ---
-  void filterByDate(DateTime date) {
-    setState(() {
-      filteredSensors = sensors.where((sensor) {
-        final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
-        if (timestamp == null) return false;
-        return timestamp.year == date.year &&
-            timestamp.month == date.month &&
-            timestamp.day == date.day;
-      }).toList();
-    });
+void filterToday() {
+  final now = DateTime.now();
+  final start = DateTime(now.year, now.month, now.day);
+  final end = start.add(const Duration(days: 1));
+
+  setState(() {
+    filteredSensors = sensors.where((sensor) {
+      final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
+      if (timestamp == null) return false;
+      return timestamp.isAfter(start) && timestamp.isBefore(end);
+    }).toList();
+  });
+}
+
+void filterYesterday() {
+  final now = DateTime.now();
+  final startOfToday = DateTime(now.year, now.month, now.day);
+  final startOfYesterday = startOfToday.subtract(const Duration(days: 1));
+
+  setState(() {
+    filteredSensors = sensors.where((sensor) {
+      final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
+      if (timestamp == null) return false;
+      return timestamp.isAfter(startOfYesterday) &&
+             timestamp.isBefore(startOfToday);
+    }).toList();
+  });
+}
+
+void filterByCustomDuration(int value, String unit) {
+  Duration duration;
+
+  switch (unit) {
+    case "Minutes":
+      duration = Duration(minutes: value);
+      break;
+    case "Hours":
+      duration = Duration(hours: value);
+      break;
+    case "Days":
+      duration = Duration(days: value);
+      break;
+    default:
+      duration = const Duration(hours: 1);
   }
 
-  void filterByDateRange(DateTimeRange range) {
-    setState(() {
-      filteredSensors = sensors.where((sensor) {
-        final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
-        if (timestamp == null) return false;
-        return timestamp.isAfter(range.start.subtract(const Duration(days: 1))) &&
-            timestamp.isBefore(range.end.add(const Duration(days: 1)));
-      }).toList();
-    });
-  }
+  final now = DateTime.now();
+
+  setState(() {
+    filteredSensors = sensors.where((sensor) {
+      final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
+      if (timestamp == null) return false;
+      return timestamp.isAfter(now.subtract(duration));
+    }).toList();
+  });
+}
 
   void resetFilter() {
     setState(() {
@@ -119,62 +143,155 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
     });
   }
 
-  void showFilterOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.today),
-                title: const Text("Filter by Specific Date"),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2024),
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null) filterByDate(picked);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.date_range),
-                title: const Text("Filter by Date Range"),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final DateTimeRange? range = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2024),
-                    lastDate: DateTime(2100),
-                    initialDateRange: DateTimeRange(
-                      start: DateTime.now().subtract(const Duration(days: 7)),
-                      end: DateTime.now(),
+ void showFilterOptions() {
+  final TextEditingController controller = TextEditingController();
+  String selectedUnit = "Minutes";
+  String? errorText;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              "Filter Sensor Data",
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  /// 🔹 QUICK FILTERS
+                  const Text(
+                    "Quick Filters",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 10),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            filterToday();
+                          },
+                          child: const Text("Today"),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            filterYesterday();
+                          },
+                          child: const Text("Yesterday"),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// 🔹 CUSTOM FILTER
+                  const Text(
+                    "Custom Duration",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Enter value",
+                      border: const OutlineInputBorder(),
+                      errorText: errorText,
                     ),
-                  );
-                  if (range != null) filterByDateRange(range);
-                },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  DropdownButtonFormField<String>(
+                    value: selectedUnit,
+                    items: ["Minutes", "Hours", "Days"]
+                        .map((unit) => DropdownMenuItem(
+                              value: unit,
+                              child: Text(unit),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedUnit = value!;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
               ),
-              ListTile(
-                leading: const Icon(Icons.refresh),
-                title: const Text("Reset Filter"),
-                onTap: () {
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
                   Navigator.pop(context);
                   resetFilter();
                 },
+                child: const Text("Reset"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final int? value = int.tryParse(controller.text);
+
+                  if (value == null || value <= 0) {
+                    setModalState(() {
+                      errorText = "Please enter a valid number";
+                    });
+                    return;
+                  }
+
+                  // 🚫 Restriction Rules
+                  if (selectedUnit == "Minutes" && value > 60) {
+                    setModalState(() {
+                      errorText = "Maximum allowed is 60 minutes";
+                    });
+                    return;
+                  }
+
+                  if (selectedUnit == "Hours" && value > 24) {
+                    setModalState(() {
+                      errorText = "Maximum allowed is 24 hours";
+                    });
+                    return;
+                  }
+
+                  if (selectedUnit == "Days" && value > 7) {
+                    setModalState(() {
+                      errorText = "Maximum allowed is 7 days";
+                    });
+                    return;
+                  }
+
+                  Navigator.pop(context);
+                  filterByCustomDuration(value, selectedUnit);
+                },
+                child: const Text("Apply"),
               ),
             ],
-          ),
-        );
-      },
-    );
-  }
+          );
+        },
+      );
+    },
+  );
+}
 
   // --- 🧱 UI ---
   @override

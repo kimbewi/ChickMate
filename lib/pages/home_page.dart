@@ -17,6 +17,10 @@ import 'package:web_socket_channel/io.dart'; // for websocket
 import 'dart:convert'; // for json decoding
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 class MyHomePage extends StatefulWidget {
   final String title;
@@ -58,6 +62,27 @@ class _MyHomePageState extends State<MyHomePage> {
     _connect(); // WebRTC INIT
     fetchUnreadCount();
     setupFCM();
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("📩 Foreground message received");
+
+      if (message.notification != null) {
+        flutterLocalNotificationsPlugin.show(
+          0,
+          message.notification!.title,
+          message.notification!.body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'high_importance_channel_v2', // id
+              'High Importance Notifications', // name
+              importance: Importance.high,
+              priority: Priority.high,
+              icon: 'app_logo'
+            ),
+          ),
+        );
+      }
+    });
 
      _notificationTimer = Timer.periodic(
     const Duration(seconds: 5),
