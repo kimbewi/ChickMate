@@ -33,8 +33,12 @@ class _LiveClockState extends State<LiveClock> {
     });
   }
 
+  // String _formatDateTime(DateTime dateTime) {
+  //   return DateFormat('MMM d, yyyy  HH:mm').format(dateTime);
+  // }
+
   String _formatDateTime(DateTime dateTime) {
-    return DateFormat('MMM d, yyyy  HH:mm').format(dateTime);
+  return DateFormat('MMM d, yyyy  hh:mm a').format(dateTime);
   }
 
   @override

@@ -1,57 +1,71 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
-class SensorHistoryPage extends StatefulWidget {
-  const SensorHistoryPage({super.key});
+class NotificationPage extends StatefulWidget {
+  const NotificationPage({super.key});
 
   @override
-  State<SensorHistoryPage> createState() => _SensorHistoryPageState();
+  State<NotificationPage> createState() => _NotificationPageState();
 }
 
-class _SensorHistoryPageState extends State<SensorHistoryPage> {
-  List sensors = [];
-  List filteredSensors = [];
+class _NotificationPageState extends State<NotificationPage> {
+  List notifications = [];
+  List filteredNotifications = [];
   bool isLoading = true;
 
-  final String baseUrl = 'http://100.68.113.75:5000/api/sensors';
+  // 🔁 CHANGE THIS TO YOUR SERVER IP
+  static const String apiUrl =
+      "http://100.68.113.75:5000/api/notifications";
 
   @override
   void initState() {
     super.initState();
-    fetchSensors();
+    fetchNotifications();
   }
 
-  Future<void> fetchSensors() async {
-    try {
-      final response = await http.get(Uri.parse(baseUrl));
+  // Future<void> fetchNotifications() async {
+  //   try {
+  //     final response = await http.get(Uri.parse(apiUrl));
 
-      if (response.statusCode == 200) {
-        final List data = json.decode(response.body);
-        setState(() {
-          sensors = data;
-          filteredSensors = data;
-          isLoading = false;
-        });
-      } else {
-        print('Failed to load sensors: ${response.statusCode}');
-        setState(() => isLoading = false);
-      }
-    } catch (e) {
-      print('Error fetching sensors: $e');
-      setState(() => isLoading = false);
+  //     if (response.statusCode == 200) {
+  //       setState(() {
+  //         notifications = json.decode(response.body);
+  //         isLoading = false;
+  //       });
+  //     } else {
+  //       throw Exception("Failed to load notifications");
+  //     }
+  //   } catch (e) {
+  //     debugPrint("❌ Notification fetch error: $e");
+  //     setState(() => isLoading = false);
+  //   }
+  // }
+
+  Future<void> fetchNotifications() async {
+  try {
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      setState(() {
+        notifications = data;
+        filteredNotifications = data; // ✅ THIS LINE
+        isLoading = false;
+      });
+    } else {
+      throw Exception("Failed to load notifications");
     }
+  } catch (e) {
+    debugPrint("❌ Notification fetch error: $e");
+    setState(() => isLoading = false);
   }
+}
 
-  String displaySensor(dynamic value, {String unit = ''}) {
-    if (value is num) return "$value $unit";     // valid number
-    if (value is String) return value;           // backend error string, show as is
-    return value.toString();                     // fallback
-  }
-
-  String formatTimestamp(String? isoTime) {
+String formatTimestamp(String? isoTime) {
   if (isoTime == null || isoTime.isEmpty) return "No timestamp";
 
   // Example: 2026-01-07T14:30:00+08:00
@@ -86,7 +100,7 @@ void filterToday() {
   final end = start.add(const Duration(days: 1));
 
   setState(() {
-    filteredSensors = sensors.where((sensor) {
+    filteredNotifications = notifications.where((sensor) {
       final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
       if (timestamp == null) return false;
       return timestamp.isAfter(start) && timestamp.isBefore(end);
@@ -100,7 +114,7 @@ void filterYesterday() {
   final startOfYesterday = startOfToday.subtract(const Duration(days: 1));
 
   setState(() {
-    filteredSensors = sensors.where((sensor) {
+    filteredNotifications = notifications.where((sensor) {
       final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
       if (timestamp == null) return false;
       return timestamp.isAfter(startOfYesterday) &&
@@ -129,7 +143,7 @@ void filterByCustomDuration(int value, String unit) {
   final now = DateTime.now();
 
   setState(() {
-    filteredSensors = sensors.where((sensor) {
+    filteredNotifications = notifications.where((sensor) {
       final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
       if (timestamp == null) return false;
       return timestamp.isAfter(now.subtract(duration));
@@ -139,11 +153,11 @@ void filterByCustomDuration(int value, String unit) {
 
   void resetFilter() {
     setState(() {
-      filteredSensors = sensors;
+      filteredNotifications = notifications;
     });
   }
 
- void showFilterOptions() {
+  void showFilterOptions() {
   final TextEditingController controller = TextEditingController();
   String selectedUnit = "Minutes";
   String? errorText;
@@ -293,18 +307,42 @@ void filterByCustomDuration(int value, String unit) {
   );
 }
 
-  // --- 🧱 UI ---
+  Color severityColor(String severity) {
+    switch (severity) {
+      case "HIGH":
+        return Colors.redAccent;
+      case "MEDIUM":
+        return Colors.orangeAccent;
+      case "LOW":
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData severityIcon(String severity) {
+    switch (severity) {
+      case "HIGH":
+        return Icons.error_outline;
+      case "MEDIUM":
+        return Icons.warning_amber_outlined;
+      case "LOW":
+        return Icons.info_outline;
+      default:
+        return Icons.notifications_none;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Sensor History",
+          "Notifications",
           style: GoogleFonts.inter(fontWeight: FontWeight.w700),
         ),
         backgroundColor: const Color(0xFFFFE66A),
-        foregroundColor: Colors.black87,
-        elevation: 2,
+        elevation: 1,
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -313,50 +351,91 @@ void filterByCustomDuration(int value, String unit) {
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : filteredSensors.isEmpty
-              ? const Center(child: Text("No sensor data found"))
-              : RefreshIndicator(
-                  onRefresh: fetchSensors,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: filteredSensors.length,
+      body: RefreshIndicator(
+        onRefresh: fetchNotifications,
+        color: Colors.orange,
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : filteredNotifications.isEmpty
+                ? const Center(child: Text("No notifications"))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredNotifications.length,
                     itemBuilder: (context, index) {
-                      final sensor = filteredSensors[index];
+                      final n = filteredNotifications[index];
+
                       return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        elevation: 2,
+                        elevation: 1,
+                        margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: ListTile(
-                          leading:
-                              const Icon(Icons.sensors, color: Colors.amber),
-                          title: const Text(
-                            "Sensor Reading",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Temperature: ${displaySensor(sensor['temperature'], unit: '°C')}"),
-                              Text("Humidity: ${displaySensor(sensor['humidity'], unit: '%')}"),
-                              Text("Ammonia: ${displaySensor(sensor['ammonia'], unit: 'ppm')}"),
-                              Text("Light: ${displaySensor(sensor['light'], unit: 'lx')}"),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Date & Time: ${formatTimestamp(sensor['timestamp'])}",
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
+                              Icon(
+                                severityIcon(n['severity']),
+                                color: severityColor(n['severity']),
+                                size: 28,
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      n['type'],
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: severityColor(n['severity']),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      n['message'],
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Sensor: ${n['sensor']}",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      formatTimestamp(n['created_at']),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (n['is_read'] == false)
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(top: 4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.redAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
                       );
                     },
                   ),
-                ),
+      ),
     );
   }
 }

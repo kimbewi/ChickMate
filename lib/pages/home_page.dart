@@ -8,11 +8,19 @@ import '../widgets/status_card.dart';
 import '../widgets/control_card.dart';
 import 'sensor_history.dart';
 import 'actuator_history.dart';
+import 'notification_page.dart';
 import 'full_screen.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
 import 'package:web_socket_channel/io.dart'; // for websocket
 import 'dart:convert'; // for json decoding
+
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 class MyHomePage extends StatefulWidget {
   final String title;
@@ -44,11 +52,42 @@ class _MyHomePageState extends State<MyHomePage> {
   late DatabaseReference _controlsRef; // Reference for controls
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
+  bool isViewingNotifications = false;
+  int unreadCount = 0;
+  Timer? _notificationTimer;
 
   @override
   void initState() {
     super.initState();
     _connect(); // WebRTC INIT
+    fetchUnreadCount();
+    setupFCM();
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("📩 Foreground message received");
+
+      if (message.notification != null) {
+        flutterLocalNotificationsPlugin.show(
+          0,
+          message.notification!.title,
+          message.notification!.body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'high_importance_channel_v2', // id
+              'High Importance Notifications', // name
+              importance: Importance.high,
+              priority: Priority.high,
+              icon: 'app_logo'
+            ),
+          ),
+        );
+      }
+    });
+
+     _notificationTimer = Timer.periodic(
+    const Duration(seconds: 5),
+    (_) => fetchUnreadCount(),
+  );
 
     // Point the reference to the "node" or "path" in your database
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
@@ -92,6 +131,47 @@ class _MyHomePageState extends State<MyHomePage> {
       // If snapshot doesn't exist, they will keep their default values
     });
   }
+
+Future<void> setupFCM() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Ask permission
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  // Get device token
+  String? token = await messaging.getToken();
+  print("🔥 DEVICE TOKEN: $token");
+
+  // Send token to Node server
+  await http.post(
+    Uri.parse("http://100.68.113.75:5000/api/save-token"),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({"token": token}),
+  );
+}
+
+Future<void> fetchUnreadCount() async {
+  if (!mounted || isViewingNotifications) return;
+
+  try {
+    final response = await http.get(
+      Uri.parse("http://100.68.113.75:5000/api/notifications/unread-count"),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        unreadCount = data['unreadCount'] ?? 0;
+      });
+    }
+  } catch (e) {
+    debugPrint("❌ Failed to fetch unread count: $e");
+  }
+}
 
   Future<void> _disconnect() async {
     _remoteRenderer.srcObject = null;
@@ -160,7 +240,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    // ALWAYS cancel the subscription when the widget is removed
+    _notificationTimer?.cancel(); // cancel timer FIRST
     _sensorDataSubscription?.cancel();
     _controlsSubscription?.cancel();
     _remoteRenderer.dispose();
@@ -169,35 +249,102 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(253, 253, 253, 1.0),
-        automaticallyImplyLeading: false,
-        elevation: 2,
-        title: Row(
-          children: [
-            Image.asset('assets/images/appLogo.png', height: 40),
-            const SizedBox(width: 8),
-            Text(
-              "ChickMate",
-              style: GoogleFonts.inter(
-                fontSize: 28.0,
-                fontWeight: FontWeight.w800,
-                color: const Color.fromRGBO(32, 32, 32, 1.0),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(60), // <-- increase height here
+        child: AppBar(
+          backgroundColor: const Color.fromRGBO(253, 253, 253, 1.0),
+          automaticallyImplyLeading: false,
+          elevation: 2,
+          title: Row(
+            children: [
+              Image.asset('assets/images/appLogo.png', height: 45),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "ChickMate",
+                    style: GoogleFonts.inter(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Color.fromRGBO(32, 32, 32, 1.0),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  SizedBox(height: 18, child: LiveClock()),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            SizedBox(
+  width: 48, // typical IconButton size
+  height: 48,
+  child: Stack(
+    clipBehavior: Clip.none,
+    children: [
+      IconButton(
+        icon: const Icon(
+          Icons.notifications_none_outlined,
+          color: Color.fromRGBO(32, 32, 32, 1.0),
+        ),
+        tooltip: 'Notifications',
+        onPressed: () async {
+          setState(() {
+            isViewingNotifications = true;
+            unreadCount = 0;
+          });
+
+          await http.put(
+            Uri.parse("http://100.68.113.75:5000/api/notifications/mark-all-read"),
+          );
+
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationPage()),
+          );
+
+          setState(() {
+            isViewingNotifications = false;
+          });
+        },
+      ),
+      if (unreadCount > 0)
+        Positioned(
+          right: 6,
+          top: 6,
+          child: IgnorePointer(  // <-- prevent blocking taps
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
-          ],
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: Center(child: LiveClock()),
           ),
-        ],
+        ),
+    ],
+  ),
+),
+          ]
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(
