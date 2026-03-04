@@ -22,6 +22,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
+final GlobalKey _dropdownKey = GlobalKey();
+
 class MyHomePage extends StatefulWidget {
   final String title;
   const MyHomePage({super.key, required this.title});
@@ -56,12 +58,91 @@ class _MyHomePageState extends State<MyHomePage> {
   int unreadCount = 0;
   Timer? _notificationTimer;
 
+  int selectedWeek = 1; // default week
+  late DatabaseReference _chickInfoRef;
+  StreamSubscription? _chickInfoSubscription;
+
+  bool isDropdownOpen = false;
+  final LayerLink _dropdownLink = LayerLink();
+  OverlayEntry? _dropdownOverlay;
+
+  void _updateChickWeek(int week) {
+    _chickInfoRef.child('ageWeeks').set(week);
+  }
+
+  void _removeDropdown() {
+    _dropdownOverlay?.remove();
+    _dropdownOverlay = null;
+  }
+
+  void _showDropdown() {
+  final overlay = Overlay.of(context)!;
+  final renderBox = _dropdownKey.currentContext!.findRenderObject() as RenderBox;
+  final size = renderBox.size;
+  final offset = renderBox.localToGlobal(Offset.zero);
+
+  _dropdownOverlay = OverlayEntry(
+    builder: (context) => Positioned(
+      left: offset.dx,
+      top: offset.dy + size.height + 4, 
+      width: size.width,
+      child: Material(
+        elevation: 4,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(6, (index) {
+            int week = index + 1;
+            return InkWell(
+              onTap: () {
+                setState(() {
+                  selectedWeek = week;
+                });
+                _updateChickWeek(week);
+                _removeDropdown();
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                color: selectedWeek == week
+                    ? Colors.white.withOpacity(0.08)
+                    : Colors.transparent,
+                child: Text(
+                  "Week $week",
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: selectedWeek == week
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    ),
+  );
+
+    overlay.insert(_dropdownOverlay!);
+  }
+
   @override
   void initState() {
     super.initState();
     _connect(); // WebRTC INIT
     fetchUnreadCount();
     setupFCM();
+    _chickInfoRef = FirebaseDatabase.instance.ref('chickInfo');
+
+    _chickInfoSubscription = _chickInfoRef.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          selectedWeek = data['ageWeeks'] ?? 1;
+        });
+      }
+    });
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("📩 Foreground message received");
@@ -148,7 +229,7 @@ Future<void> setupFCM() async {
 
   // Send token to Node server
   await http.post(
-    Uri.parse("http://100.68.113.75:5000/api/save-token"),
+    Uri.parse("http://192.168.0.104:5000/api/save-token"),
     headers: {"Content-Type": "application/json"},
     body: jsonEncode({"token": token}),
   );
@@ -159,7 +240,7 @@ Future<void> fetchUnreadCount() async {
 
   try {
     final response = await http.get(
-      Uri.parse("http://100.68.113.75:5000/api/notifications/unread-count"),
+      Uri.parse("http://192.168.0.104:5000/api/notifications/unread-count"),
     );
 
     if (response.statusCode == 200) {
@@ -247,13 +328,14 @@ Future<void> fetchUnreadCount() async {
     _pc?.close();
     _channel?.sink.close();
     super.dispose();
+    _chickInfoSubscription?.cancel();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(60), // <-- increase height here
+        preferredSize: Size.fromHeight(60), 
         child: AppBar(
           backgroundColor: const Color.fromRGBO(253, 253, 253, 1.0),
           automaticallyImplyLeading: false,
@@ -282,25 +364,25 @@ Future<void> fetchUnreadCount() async {
           ),
           actions: [
             SizedBox(
-  width: 48, // typical IconButton size
-  height: 48,
-  child: Stack(
-    clipBehavior: Clip.none,
-    children: [
-      IconButton(
-        icon: const Icon(
-          Icons.notifications_none_outlined,
-          color: Color.fromRGBO(32, 32, 32, 1.0),
-        ),
-        tooltip: 'Notifications',
-        onPressed: () async {
-          setState(() {
-            isViewingNotifications = true;
-            unreadCount = 0;
+            width: 48, // typical IconButton size
+            height: 48,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none_outlined,
+                    color: Color.fromRGBO(32, 32, 32, 1.0),
+                  ),
+                  tooltip: 'Notifications',
+                  onPressed: () async {
+                    setState(() {
+                      isViewingNotifications = true;
+                      unreadCount = 0;
           });
 
           await http.put(
-            Uri.parse("http://100.68.113.75:5000/api/notifications/mark-all-read"),
+            Uri.parse("http://192.168.0.104:5000/api/notifications/mark-all-read"),
           );
 
           await Navigator.push(
@@ -313,36 +395,36 @@ Future<void> fetchUnreadCount() async {
           });
         },
       ),
-      if (unreadCount > 0)
-        Positioned(
-          right: 6,
-          top: 6,
-          child: IgnorePointer(  // <-- prevent blocking taps
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: Colors.redAccent,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
-              child: Text(
-                '$unreadCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+            if (unreadCount > 0)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: IgnorePointer(  // <-- prevent blocking taps
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-          ),
+          ],
         ),
-    ],
-  ),
-),
+      ),
           ]
         ),
       ),
@@ -369,6 +451,85 @@ Future<void> fetchUnreadCount() async {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+              Text(
+                "Chick Age",
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              Text(
+                "Select the age of the chicks",
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+
+                  CompositedTransformTarget(
+                    link: _dropdownLink,
+                    child: InkWell(
+                      key: _dropdownKey, // ✅ attach key here
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        if (_dropdownOverlay == null) {
+                          _showDropdown();
+                        } else {
+                          _removeDropdown();
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_month_outlined,
+                              color: Color.fromRGBO(32, 32, 32, 1.0),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Week $selectedWeek",
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              _dropdownOverlay != null
+                                  ? Icons.keyboard_arrow_up_rounded
+                                  : Icons.keyboard_arrow_down_rounded,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+              const SizedBox(height: 30),
                 Text("Video Feed",
                     style: GoogleFonts.inter(
                         fontSize: 20, fontWeight: FontWeight.w700)),
@@ -576,63 +737,6 @@ Future<void> fetchUnreadCount() async {
                   ],
                 ),
                 const SizedBox(height: 30),
-                // Text('History',
-                //     style: GoogleFonts.inter(
-                //         fontSize: 20, fontWeight: FontWeight.bold)),
-                // const SizedBox(height: 10),
-                // Column(
-                //   crossAxisAlignment: CrossAxisAlignment.start, // aligns children to left
-                //   children: [
-                //     Align(
-                //       alignment: Alignment.centerLeft,
-                //       child: ElevatedButton.icon(
-                //         onPressed: () {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(builder: (context) =>  SensorHistoryPage()),
-                //           );
-                //         },
-                //         style: ElevatedButton.styleFrom(
-                //           backgroundColor: const Color.fromARGB(255, 255, 230, 106),
-                //           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(12),
-                //           ),
-                //         ),
-                //         icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                //         label: const Text(
-                //           'View Sensor History',
-                //           style: TextStyle(fontSize: 16, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                //         ),
-                //       ),
-                //     ),
-                //     const SizedBox(height: 10),
-                //     Align(
-                //       alignment: Alignment.centerLeft,
-                //       child: ElevatedButton.icon(
-                //         onPressed: () {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(builder: (context) => const ActuatorHistoryPage()),
-                //           );
-                //         },
-                //         style: ElevatedButton.styleFrom(
-                //           backgroundColor: const Color.fromARGB(255, 255, 230, 106),
-                //           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(12),
-                //           ),
-                //         ),
-                //         icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                //         label: const Text(
-                //           'View Actuator History',
-                //           style: TextStyle(fontSize: 16, color: Color.fromRGBO(32, 32, 32, 1.0)),
-                //         ),
-                //       ),
-                //     ),
-                //     const SizedBox(height: 30), // space below the button
-                //   ],
-                // )
               ],             
             ),
           ),
