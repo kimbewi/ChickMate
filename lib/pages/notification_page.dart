@@ -18,8 +18,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   // 🔁 CHANGE THIS TO YOUR SERVER IP
   static const String apiUrl =
-      "http://192.168.0.104:5000/api/notifications";
-      // OR http://localhost:5000 when emulator
+      "http://100.68.113.75:5000/api/notifications";
 
   @override
   void initState() {

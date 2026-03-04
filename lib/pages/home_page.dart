@@ -148,7 +148,7 @@ Future<void> setupFCM() async {
 
   // Send token to Node server
   await http.post(
-    Uri.parse("http://192.168.0.104:5000/api/save-token"),
+    Uri.parse("http://100.68.113.75:5000/api/save-token"),
     headers: {"Content-Type": "application/json"},
     body: jsonEncode({"token": token}),
   );
@@ -159,7 +159,7 @@ Future<void> fetchUnreadCount() async {
 
   try {
     final response = await http.get(
-      Uri.parse("http://192.168.0.104:5000/api/notifications/unread-count"),
+      Uri.parse("http://100.68.113.75:5000/api/notifications/unread-count"),
     );
 
     if (response.statusCode == 200) {
@@ -300,7 +300,7 @@ Future<void> fetchUnreadCount() async {
           });
 
           await http.put(
-            Uri.parse("http://192.168.0.104:5000/api/notifications/mark-all-read"),
+            Uri.parse("http://100.68.113.75:5000/api/notifications/mark-all-read"),
           );
 
           await Navigator.push(

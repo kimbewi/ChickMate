@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:timezone/timezone.dart' as tz;
 import 'package:google_fonts/google_fonts.dart';
 
 class ActuatorHistoryPage extends StatefulWidget {
@@ -25,7 +24,7 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
 
   Future<void> fetchActuatorData() async {
     final response =
-        await http.get(Uri.parse('http://192.168.0.104:5000/api/actuators'));
+        await http.get(Uri.parse('http://100.68.113.75:5000/api/actuators'));
     if (response.statusCode == 200) {
       setState(() {
         actuators = json.decode(response.body);
