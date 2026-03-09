@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/history_service.dart';
+// import 'package:http/http.dart' as http;
+// import 'dart:convert';
 
 class SensorHistoryPage extends StatefulWidget {
   const SensorHistoryPage({super.key});
@@ -26,20 +27,16 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
 
   Future<void> fetchSensors() async {
     try {
-      final response = await http.get(Uri.parse(baseUrl));
-      if (response.statusCode == 200) {
-        final List data = json.decode(response.body);
-        setState(() {
-          sensors = data;
-          filteredSensors = data;
-          isLoading = false;
-        });
-      } else {
-        print('Failed to load sensors: ${response.statusCode}');
-        setState(() => isLoading = false);
-      }
+      final data = await HistoryService.fetchSensors();
+
+      setState(() {
+        sensors = data;
+        filteredSensors = data;
+        isLoading = false;
+      });
+
     } catch (e) {
-      print('Error fetching sensors: $e');
+      print("Error fetching sensors: $e");
       setState(() => isLoading = false);
     }
   }

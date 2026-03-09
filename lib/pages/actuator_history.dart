@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
+import '../services/history_service.dart';
+// import 'dart:convert';
+// import 'package:http/http.dart' as http;
 
 class ActuatorHistoryPage extends StatefulWidget {
   const ActuatorHistoryPage({Key? key}) : super(key: key);
@@ -28,20 +29,36 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     return null;
   }
 
+  // Future<void> fetchActuatorData() async {
+  //   try {
+  //     final response = await http.get(Uri.parse('http://192.168.0.104:5000/api/actuators'));
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       setState(() {
+  //         actuators = data;
+  //         filteredActuators = data;
+  //         isLoading = false;
+  //       });
+  //     } else {
+  //       debugPrint("Failed to load actuator data");
+  //       setState(() => isLoading = false);
+  //     }
+  //   } catch (e) {
+  //     debugPrint("❌ Actuator fetch error: $e");
+  //     setState(() => isLoading = false);
+  //   }
+  // }
+
   Future<void> fetchActuatorData() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.0.104:5000/api/actuators'));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          actuators = data;
-          filteredActuators = data;
-          isLoading = false;
-        });
-      } else {
-        debugPrint("Failed to load actuator data");
-        setState(() => isLoading = false);
-      }
+      final data = await HistoryService.fetchActuators();
+
+      setState(() {
+        actuators = data;
+        filteredActuators = data;
+        isLoading = false;
+      });
+
     } catch (e) {
       debugPrint("❌ Actuator fetch error: $e");
       setState(() => isLoading = false);

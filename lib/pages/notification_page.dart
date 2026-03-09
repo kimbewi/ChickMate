@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import '../services/history_service.dart';
+// import 'dart:convert';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -16,7 +16,7 @@ class _NotificationPageState extends State<NotificationPage> {
   List filteredNotifications = [];
   bool isLoading = true;
 
-  static const String apiUrl = "http://192.168.0.104:5000/api/notifications";
+  // static const String apiUrl = "http://192.168.0.104:5000/api/notifications";
 
   @override
   void initState() {
@@ -33,19 +33,35 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   // --- Fetch notifications ---
+  // Future<void> fetchNotifications() async {
+  //   try {
+  //     final response = await http.get(Uri.parse(apiUrl));
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       setState(() {
+  //         notifications = data;
+  //         filteredNotifications = data;
+  //         isLoading = false;
+  //       });
+  //     } else {
+  //       throw Exception("Failed to load notifications");
+  //     }
+  //   } catch (e) {
+  //     debugPrint("❌ Notification fetch error: $e");
+  //     setState(() => isLoading = false);
+  //   }
+  // }
+
   Future<void> fetchNotifications() async {
     try {
-      final response = await http.get(Uri.parse(apiUrl));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          notifications = data;
-          filteredNotifications = data;
-          isLoading = false;
-        });
-      } else {
-        throw Exception("Failed to load notifications");
-      }
+      final data = await HistoryService.fetchNotifications();
+
+      setState(() {
+        notifications = data;
+        filteredNotifications = data;
+        isLoading = false;
+      });
+
     } catch (e) {
       debugPrint("❌ Notification fetch error: $e");
       setState(() => isLoading = false);
