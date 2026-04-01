@@ -29,26 +29,6 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     return null;
   }
 
-  // Future<void> fetchActuatorData() async {
-  //   try {
-  //     final response = await http.get(Uri.parse('http://192.168.0.104:5000/api/actuators'));
-  //     if (response.statusCode == 200) {
-  //       final data = json.decode(response.body);
-  //       setState(() {
-  //         actuators = data;
-  //         filteredActuators = data;
-  //         isLoading = false;
-  //       });
-  //     } else {
-  //       debugPrint("Failed to load actuator data");
-  //       setState(() => isLoading = false);
-  //     }
-  //   } catch (e) {
-  //     debugPrint("❌ Actuator fetch error: $e");
-  //     setState(() => isLoading = false);
-  //   }
-  // }
-
   Future<void> fetchActuatorData() async {
     try {
       final data = await HistoryService.fetchActuators();

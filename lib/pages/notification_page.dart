@@ -16,8 +16,6 @@ class _NotificationPageState extends State<NotificationPage> {
   List filteredNotifications = [];
   bool isLoading = true;
 
-  // static const String apiUrl = "http://192.168.0.104:5000/api/notifications";
-
   @override
   void initState() {
     super.initState();
@@ -31,26 +29,6 @@ class _NotificationPageState extends State<NotificationPage> {
     }
     return null;
   }
-
-  // --- Fetch notifications ---
-  // Future<void> fetchNotifications() async {
-  //   try {
-  //     final response = await http.get(Uri.parse(apiUrl));
-  //     if (response.statusCode == 200) {
-  //       final data = json.decode(response.body);
-  //       setState(() {
-  //         notifications = data;
-  //         filteredNotifications = data;
-  //         isLoading = false;
-  //       });
-  //     } else {
-  //       throw Exception("Failed to load notifications");
-  //     }
-  //   } catch (e) {
-  //     debugPrint("❌ Notification fetch error: $e");
-  //     setState(() => isLoading = false);
-  //   }
-  // }
 
   Future<void> fetchNotifications() async {
     try {
