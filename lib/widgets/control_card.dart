@@ -74,6 +74,7 @@ class SliderControlCard extends StatelessWidget {
   final IconData icon;
   final double value; // The current brightness (0-100)
   final Function(double) onChanged; // Function to call when slider moves
+  final ValueChanged<double>? onChangeEnd;
 
   const SliderControlCard({
     super.key,
@@ -81,6 +82,8 @@ class SliderControlCard extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.onChanged,
+    this.onChangeEnd,
+    
   });
 
   @override
@@ -136,6 +139,7 @@ class SliderControlCard extends StatelessWidget {
               activeColor: const Color(0xFFF9A825), // Slider "on" color
               inactiveColor: Colors.grey.shade300, // Slider "off" color
               onChanged: onChanged, // Function to call when user drags
+              onChangeEnd: onChangeEnd,
             ),
           ],
         ),

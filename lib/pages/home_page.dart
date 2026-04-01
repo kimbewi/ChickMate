@@ -447,7 +447,7 @@ Future<void> fetchUnreadCount() async {
             
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-          child: SingleChildScrollView(
+          // child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -731,7 +731,9 @@ Future<void> fetchUnreadCount() async {
                       setState(() {
                         lightBrightness = newValue;
                       });
-                      _updateControl('lightBrightness', newValue.round());
+                    },
+                      onChangeEnd: (newValue) {
+                        _updateControl('lightBrightness', newValue.round());
                     },
                   ),
                   ],
@@ -739,7 +741,7 @@ Future<void> fetchUnreadCount() async {
                 const SizedBox(height: 30),
               ],             
             ),
-          ),
+          // ),
         ),
       ),
       ),

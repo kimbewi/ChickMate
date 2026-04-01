@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/history_service.dart';
+// import 'package:http/http.dart' as http;
+// import 'dart:convert';
 
 class SensorHistoryPage extends StatefulWidget {
   const SensorHistoryPage({super.key});
@@ -16,8 +17,6 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
   List filteredSensors = [];
   bool isLoading = true;
 
-  final String baseUrl = 'http://100.68.113.75:5000/api/sensors';
-
   @override
   void initState() {
     super.initState();
@@ -26,116 +25,96 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
 
   Future<void> fetchSensors() async {
     try {
-      final response = await http.get(Uri.parse(baseUrl));
+      final data = await HistoryService.fetchSensors();
 
-      if (response.statusCode == 200) {
-        final List data = json.decode(response.body);
-        setState(() {
-          sensors = data;
-          filteredSensors = data;
-          isLoading = false;
-        });
-      } else {
-        print('Failed to load sensors: ${response.statusCode}');
-        setState(() => isLoading = false);
-      }
+      setState(() {
+        sensors = data;
+        filteredSensors = data;
+        isLoading = false;
+      });
+
     } catch (e) {
-      print('Error fetching sensors: $e');
+      print("Error fetching sensors: $e");
       setState(() => isLoading = false);
     }
   }
 
   String displaySensor(dynamic value, {String unit = ''}) {
-    if (value is num) return "$value $unit";     // valid number
-    if (value is String) return value;           // backend error string, show as is
-    return value.toString();                     // fallback
+    if (value is num) return "$value $unit";
+    if (value is String) return value; // show error messages like "Error: Read Failure"
+    return value.toString();
   }
 
-  String formatTimestamp(String? isoTime) {
-  if (isoTime == null || isoTime.isEmpty) return "No timestamp";
+  // --- ✅ NEW: parse timestamp safely ---
+  DateTime? parseTimestamp(Map sensor) {
+    try {
+      if (sensor['timestamp'] == null) return null;
+      return DateTime.parse(sensor['timestamp']).toLocal();
+    } catch (_) {
+      return null;
+    }
+  }
 
-  // Example: 2026-01-07T14:30:00+08:00
-  try {
-    final date = isoTime.substring(0, 10); // YYYY-MM-DD
-    final time = isoTime.substring(11, 16); // HH:mm
-
-    final year = date.substring(0, 4);
-    final month = date.substring(5, 7);
-    final day = date.substring(8, 10);
-
-    final hour = int.parse(time.substring(0, 2));
-    final minute = time.substring(3, 5);
-
-    final dt = DateTime(
-      int.parse(year),
-      int.parse(month),
-      int.parse(day),
-      hour,
-      int.parse(minute),
-    );
-
+  String formatTimestamp(Map sensor) {
+    final dt = parseTimestamp(sensor);
+    if (dt == null) return "No timestamp";
     return DateFormat('MMMM dd, yyyy – hh:mm a').format(dt);
-  } catch (_) {
-    return isoTime;
-  }
-}
-
-void filterToday() {
-  final now = DateTime.now();
-  final start = DateTime(now.year, now.month, now.day);
-  final end = start.add(const Duration(days: 1));
-
-  setState(() {
-    filteredSensors = sensors.where((sensor) {
-      final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
-      if (timestamp == null) return false;
-      return timestamp.isAfter(start) && timestamp.isBefore(end);
-    }).toList();
-  });
-}
-
-void filterYesterday() {
-  final now = DateTime.now();
-  final startOfToday = DateTime(now.year, now.month, now.day);
-  final startOfYesterday = startOfToday.subtract(const Duration(days: 1));
-
-  setState(() {
-    filteredSensors = sensors.where((sensor) {
-      final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
-      if (timestamp == null) return false;
-      return timestamp.isAfter(startOfYesterday) &&
-             timestamp.isBefore(startOfToday);
-    }).toList();
-  });
-}
-
-void filterByCustomDuration(int value, String unit) {
-  Duration duration;
-
-  switch (unit) {
-    case "Minutes":
-      duration = Duration(minutes: value);
-      break;
-    case "Hours":
-      duration = Duration(hours: value);
-      break;
-    case "Days":
-      duration = Duration(days: value);
-      break;
-    default:
-      duration = const Duration(hours: 1);
   }
 
-  final now = DateTime.now();
+  void filterToday() {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
 
-  setState(() {
-    filteredSensors = sensors.where((sensor) {
-      final timestamp = DateTime.tryParse(sensor['timestamp'] ?? '');
-      if (timestamp == null) return false;
-      return timestamp.isAfter(now.subtract(duration));
-    }).toList();
-  });
-}
+    setState(() {
+      filteredSensors = sensors.where((sensor) {
+        final ts = parseTimestamp(sensor);
+        if (ts == null) return true; // keep sensor even if timestamp is missing
+        return ts.isAfter(start) && ts.isBefore(end);
+      }).toList();
+    });
+  }
+
+  void filterYesterday() {
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final startOfYesterday = startOfToday.subtract(const Duration(days: 1));
+
+    setState(() {
+      filteredSensors = sensors.where((sensor) {
+        final ts = parseTimestamp(sensor);
+        if (ts == null) return true;
+        return ts.isAfter(startOfYesterday) && ts.isBefore(startOfToday);
+      }).toList();
+    });
+  }
+
+  void filterByCustomDuration(int value, String unit) {
+    Duration duration;
+    switch (unit) {
+      case "Minutes":
+        duration = Duration(minutes: value);
+        break;
+      case "Hours":
+        duration = Duration(hours: value);
+        break;
+      case "Days":
+        duration = Duration(days: value);
+        break;
+      default:
+        duration = const Duration(hours: 1);
+    }
+
+    final now = DateTime.now();
+
+    setState(() {
+      filteredSensors = sensors.where((sensor) {
+        final ts = parseTimestamp(sensor);
+        if (ts == null) return true; // keep entries without timestamp
+        return ts.isAfter(now.subtract(duration));
+      }).toList();
+    });
+  }
 
   void resetFilter() {
     setState(() {
@@ -143,157 +122,142 @@ void filterByCustomDuration(int value, String unit) {
     });
   }
 
- void showFilterOptions() {
-  final TextEditingController controller = TextEditingController();
-  String selectedUnit = "Minutes";
-  String? errorText;
+  void showFilterOptions() {
+    final TextEditingController controller = TextEditingController();
+    String selectedUnit = "Minutes";
+    String? errorText;
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setModalState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Text(
-              "Filter Sensor Data",
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  /// 🔹 QUICK FILTERS
-                  const Text(
-                    "Quick Filters",
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 10),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            filterToday();
-                          },
-                          child: const Text("Today"),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            filterYesterday();
-                          },
-                          child: const Text("Yesterday"),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /// 🔹 CUSTOM FILTER
-                  const Text(
-                    "Custom Duration",
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 10),
-
-                  TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: "Enter value",
-                      border: const OutlineInputBorder(),
-                      errorText: errorText,
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                "Filter Sensor Data",
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Quick Filters",
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  DropdownButtonFormField<String>(
-                    value: selectedUnit,
-                    items: ["Minutes", "Hours", "Days"]
-                        .map((unit) => DropdownMenuItem(
-                              value: unit,
-                              child: Text(unit),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              filterToday();
+                            },
+                            child: const Text("Today"),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              filterYesterday();
+                            },
+                            child: const Text("Yesterday"),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Custom Duration",
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: "Enter value",
+                        border: const OutlineInputBorder(),
+                        errorText: errorText,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedUnit,
+                      items: ["Minutes", "Hours", "Days"]
+                          .map((unit) => DropdownMenuItem(
+                                value: unit,
+                                child: Text(unit),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setModalState(() {
+                          selectedUnit = value!;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    resetFilter();
+                  },
+                  child: const Text("Reset"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final int? value = int.tryParse(controller.text);
+                    if (value == null || value <= 0) {
                       setModalState(() {
-                        selectedUnit = value!;
+                        errorText = "Please enter a valid number";
                       });
-                    },
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  resetFilter();
-                },
-                child: const Text("Reset"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final int? value = int.tryParse(controller.text);
+                      return;
+                    }
+                    if (selectedUnit == "Minutes" && value > 60) {
+                      setModalState(() {
+                        errorText = "Maximum allowed is 60 minutes";
+                      });
+                      return;
+                    }
+                    if (selectedUnit == "Hours" && value > 24) {
+                      setModalState(() {
+                        errorText = "Maximum allowed is 24 hours";
+                      });
+                      return;
+                    }
+                    if (selectedUnit == "Days" && value > 7) {
+                      setModalState(() {
+                        errorText = "Maximum allowed is 7 days";
+                      });
+                      return;
+                    }
+                    Navigator.pop(context);
+                    filterByCustomDuration(value, selectedUnit);
+                  },
+                  child: const Text("Apply"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
-                  if (value == null || value <= 0) {
-                    setModalState(() {
-                      errorText = "Please enter a valid number";
-                    });
-                    return;
-                  }
-
-                  // 🚫 Restriction Rules
-                  if (selectedUnit == "Minutes" && value > 60) {
-                    setModalState(() {
-                      errorText = "Maximum allowed is 60 minutes";
-                    });
-                    return;
-                  }
-
-                  if (selectedUnit == "Hours" && value > 24) {
-                    setModalState(() {
-                      errorText = "Maximum allowed is 24 hours";
-                    });
-                    return;
-                  }
-
-                  if (selectedUnit == "Days" && value > 7) {
-                    setModalState(() {
-                      errorText = "Maximum allowed is 7 days";
-                    });
-                    return;
-                  }
-
-                  Navigator.pop(context);
-                  filterByCustomDuration(value, selectedUnit);
-                },
-                child: const Text("Apply"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
-
-  // --- 🧱 UI ---
+  // --- UI ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -340,13 +304,17 @@ void filterByCustomDuration(int value, String unit) {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Temperature: ${displaySensor(sensor['temperature'], unit: '°C')}"),
-                              Text("Humidity: ${displaySensor(sensor['humidity'], unit: '%')}"),
-                              Text("Ammonia: ${displaySensor(sensor['ammonia'], unit: 'ppm')}"),
-                              Text("Light: ${displaySensor(sensor['light'], unit: 'lx')}"),
+                              Text(
+                                  "Temperature: ${displaySensor(sensor['temperature'], unit: '°C')}"),
+                              Text(
+                                  "Humidity: ${displaySensor(sensor['humidity'], unit: '%')}"),
+                              Text(
+                                  "Ammonia: ${displaySensor(sensor['ammonia'], unit: 'ppm')}"),
+                              Text(
+                                  "Light: ${displaySensor(sensor['light'], unit: 'lx')}"),
                               const SizedBox(height: 4),
                               Text(
-                                "Date & Time: ${formatTimestamp(sensor['timestamp'])}",
+                                "Date & Time: ${formatTimestamp(sensor)}",
                                 style: const TextStyle(
                                     fontSize: 12, color: Colors.grey),
                               ),
