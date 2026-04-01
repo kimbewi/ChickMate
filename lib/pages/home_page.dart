@@ -50,10 +50,15 @@ class _MyHomePageState extends State<MyHomePage> {
   RTCPeerConnection? _pc;
   IOWebSocketChannel? _channel;
 
-  late DatabaseReference _sensorDataRef; // Reference for sensor data
-  late DatabaseReference _controlsRef; // Reference for controls
+  late DatabaseReference _sensorDataRef; 
+  late DatabaseReference _controlsRef; 
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
+
+  late DatabaseReference _settingsRef;
+  StreamSubscription? _settingsSubscription;
+  bool isManualMode = false; 
+
   bool isViewingNotifications = false;
   int unreadCount = 0;
   Timer? _notificationTimer;
@@ -65,6 +70,14 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isDropdownOpen = false;
   final LayerLink _dropdownLink = LayerLink();
   OverlayEntry? _dropdownOverlay;
+
+  void _toggleMode(bool value) {
+  setState(() {
+    isManualMode = value;
+  });
+
+    _settingsRef.child('manualOverride').set(value);
+  }
 
   void _updateChickWeek(int week) {
     _chickInfoRef.child('ageWeeks').set(week);
@@ -166,9 +179,9 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
      _notificationTimer = Timer.periodic(
-    const Duration(seconds: 5),
-    (_) => fetchUnreadCount(),
-  );
+        const Duration(seconds: 5),
+        (_) => fetchUnreadCount(),
+      );
 
     // Point the reference to the "node" or "path" in your database
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
@@ -210,6 +223,16 @@ class _MyHomePageState extends State<MyHomePage> {
         });
       }
       // If snapshot doesn't exist, they will keep their default values
+    });
+    _settingsRef = FirebaseDatabase.instance.ref('currentSettings');
+
+    _settingsSubscription = _settingsRef.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          isManualMode = data['manualOverride'] ?? false;
+        });
+      }
     });
   }
 
@@ -324,11 +347,14 @@ Future<void> fetchUnreadCount() async {
     _notificationTimer?.cancel(); // cancel timer FIRST
     _sensorDataSubscription?.cancel();
     _controlsSubscription?.cancel();
+    _chickInfoSubscription?.cancel();
+    _settingsSubscription?.cancel();
+
     _remoteRenderer.dispose();
     _pc?.close();
     _channel?.sink.close();
+
     super.dispose();
-    _chickInfoSubscription?.cancel();
   }
 
   @override
@@ -451,6 +477,87 @@ Future<void> fetchUnreadCount() async {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+              Text(
+                "System Mode",
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              Text(
+                "Switch between Automatic and Manual control",
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isManualMode ? Icons.handyman_outlined : Icons.smart_toy_outlined,
+                      color: const Color.fromRGBO(32, 32, 32, 1.0),
+                    ),
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isManualMode ? "Manual Mode" : "Automatic Mode",
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            isManualMode
+                                ? "User controls all devices"
+                                : "AI controls the system",
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Switch(
+                      value: isManualMode,
+                      // activeColor: Colors.orange,
+                      activeThumbColor: Colors.white,
+                      inactiveThumbColor: Colors.grey.shade700,
+
+                      // 👇 KEY PART: prevent solid fill look
+                      activeTrackColor: const Color(0xFFF9A825),
+                      inactiveTrackColor: Colors.grey.shade200,
+
+                      onChanged: _toggleMode,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
               Text(
                 "Chick Age",
                 style: GoogleFonts.inter(
