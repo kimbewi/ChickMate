@@ -10,6 +10,7 @@ import 'sensor_history.dart';
 import 'actuator_history.dart';
 import 'notification_page.dart';
 import 'full_screen.dart';
+import '../widgets/flock_status_card.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
@@ -45,13 +46,19 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isHeaterOn = false;
   double lightBrightness = 0.0;
 
+  // STATE VARIABLES FOR AI PREDICTIONS
+  String flockBehavior = "--";
+  String flockSound = "--";
+
   // WebRTC VARIABLES
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   RTCPeerConnection? _pc;
   IOWebSocketChannel? _channel;
 
   late DatabaseReference _sensorDataRef; 
-  late DatabaseReference _controlsRef; 
+  late DatabaseReference _controlsRef;
+  late DatabaseReference _flockStatusRef; // Reference for flock status (AI predictions)
+  StreamSubscription? _flockStatusSubscription; 
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
 
@@ -147,6 +154,21 @@ class _MyHomePageState extends State<MyHomePage> {
     fetchUnreadCount();
     setupFCM();
     _chickInfoRef = FirebaseDatabase.instance.ref('chickInfo');
+
+    // Listen to AI inferences for flock status
+    _flockStatusRef = FirebaseDatabase.instance.ref('aiResult');
+    _flockStatusSubscription = _flockStatusRef.onValue.listen((
+      DatabaseEvent event,
+    ) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          flockBehavior =
+              data['cv']?.toString().toUpperCase() ?? '--';
+          flockSound = data['bioacoustic']?.toString().toUpperCase() ?? '--';
+        });
+      }
+    });
 
     _chickInfoSubscription = _chickInfoRef.onValue.listen((event) {
       if (event.snapshot.exists) {
@@ -353,7 +375,7 @@ Future<void> fetchUnreadCount() async {
     _remoteRenderer.dispose();
     _pc?.close();
     _channel?.sink.close();
-
+    _flockStatusSubscription?.cancel();
     super.dispose();
   }
 
@@ -701,6 +723,31 @@ Future<void> fetchUnreadCount() async {
                 ),
               ),
 // --- END OF UPDATED CARD ---
+
+                const SizedBox(height: 16),
+
+                // FLOCK STATUS WIDGETS
+
+                Row(
+                      children: [
+                        Expanded(
+                          child: FlockStatusCard(
+                            title: 'Flock Behavior:',
+                            status: flockBehavior,
+                            iconAsset: 'assets/images/flockBehaviorIcon.png',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FlockStatusCard(
+                            title: 'Flock Sounds:',
+                            status: flockSound,
+                            iconAsset: 'assets/images/flockSoundsIcon.png',
+                          ),
+                        ),
+                      ],
+                    ),
+
                 const SizedBox(height: 30),
                 Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
