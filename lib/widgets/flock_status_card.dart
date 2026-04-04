@@ -99,7 +99,7 @@ class FlockStatusCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade700.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(8), // Matches the radius your arrow border had
+                    borderRadius: BorderRadius.circular(8), 
                   ),
                   
                   textStyle: GoogleFonts.inter(
