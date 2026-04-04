@@ -45,64 +45,77 @@ class FlockStatusCard extends StatelessWidget {
       ),
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        child: Row(
+        padding: const EdgeInsets.all(16), 
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset(
-              iconAsset,
-              height: 45,
-              width: 45,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.pets, size: 40),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        status,
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: statusColor,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Tooltip(
-                        message: tooltipMsg,
-                        triggerMode: TooltipTriggerMode.tap,
-                        showDuration: const Duration(seconds: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade700,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        textStyle: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                        child: Icon(
-                          Icons.help_outline,
-                          size: 16,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            Container(
+              padding: const EdgeInsets.all(8), 
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6E19A).withValues(alpha: 0.2), 
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: Image.asset(
+                iconAsset,
+                height: 33, 
+                width: 33,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.pets, size: 24),
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // "Flock Behavior" title
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: const Color.fromRGBO(30, 30, 30, 1.0), 
+              ),
+            ),
+            const SizedBox(height: 4),
+            
+            // Status and Tooltip Row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  status,
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: statusColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Tooltip(
+                  message: tooltipMsg,
+                  textAlign: TextAlign.center,
+                  triggerMode: TooltipTriggerMode.longPress,
+                  showDuration: const Duration(seconds: 3),
+                  preferBelow: true,
+                  verticalOffset: 12,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  
+                  // 👇 THIS IS THE ONLY PART THAT CHANGED 👇
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade700.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(8), // Matches the radius your arrow border had
+                  ),
+                  // 👆 ---------------------------------- 👆
+                  
+                  textStyle: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                  child: Icon(
+                    Icons.help_outline,
+                    size: 16,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

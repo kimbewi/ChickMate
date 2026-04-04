@@ -547,10 +547,11 @@ Future<void> fetchUnreadCount() async {
                               preferBelow: true,
                               verticalOffset: 12,
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              decoration: ShapeDecoration(
-                                color: Colors.grey.shade700.withValues(alpha:0.8),
-                                shape: const _TooltipArrowBorder(),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade700.withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(8),
                               ),
+                              
                               textStyle: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -718,11 +719,11 @@ Future<void> fetchUnreadCount() async {
                 ],
               ),
               
-              const SizedBox(height: 30),
-                Text("Video Feed",
+              const SizedBox(height: 24),
+                Text("VIDEO FEED",
                     style: GoogleFonts.inter(
                         fontSize: 20, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Card(
                 color: Colors.white,
                 elevation: 1,
@@ -784,7 +785,16 @@ Future<void> fetchUnreadCount() async {
               ),
 // --- END OF UPDATED CARD ---
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
+
+                Text(
+                  "AI ANALYSIS",
+                  style: GoogleFonts.inter(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
 
                 // FLOCK STATUS WIDGETS
 
@@ -797,7 +807,7 @@ Future<void> fetchUnreadCount() async {
                             iconAsset: 'assets/images/flockBehaviorIcon.png',
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: FlockStatusCard(
                             title: 'Flock Sounds:',
@@ -808,9 +818,10 @@ Future<void> fetchUnreadCount() async {
                       ],
                     ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
+                
                 Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
                     'Environmental Status',
@@ -964,40 +975,3 @@ Future<void> fetchUnreadCount() async {
   }
 }
 
-// TOOL TIP MESSAGE DIALOGUE BOX WITH ARROW
-
-class _TooltipArrowBorder extends ShapeBorder {
-  final double arrowWidth;
-  final double arrowHeight;
-  final double radius;
-
-  const _TooltipArrowBorder({
-    this.radius = 8.0,
-    this.arrowWidth = 14.0,
-    this.arrowHeight = 8.0,
-  });
-
-  @override
-  EdgeInsetsGeometry get dimensions => EdgeInsets.only(top: arrowHeight);
-
-  @override
-  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => Path();
-
-  @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
-    return Path()
-      ..addRRect(RRect.fromRectAndRadius(
-          Rect.fromLTRB(rect.left, rect.top + arrowHeight, rect.right, rect.bottom),
-          Radius.circular(radius)))
-      ..moveTo(rect.topCenter.dx - arrowWidth / 2, rect.top + arrowHeight)
-      ..lineTo(rect.topCenter.dx, rect.top)
-      ..lineTo(rect.topCenter.dx + arrowWidth / 2, rect.top + arrowHeight)
-      ..close();
-  }
-
-  @override
-  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
-
-  @override
-  ShapeBorder scale(double t) => this;
-}
