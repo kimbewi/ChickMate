@@ -75,6 +75,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/appLogo.png
+    - assets/images/flockBehaviorIcon.png
+    - assets/images/flockSoundsIcon.png
   #   - images/a_dot_ham.jpeg
 
   # To add icon to application

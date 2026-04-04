@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class StatusCard extends StatelessWidget {
   final String title;
@@ -19,6 +20,7 @@ class StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -28,9 +30,10 @@ class StatusCard extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 12, // 🔧 fixed static size for title
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade700,
               ),
             ),
             const SizedBox(height: 8),
