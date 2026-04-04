@@ -501,7 +501,7 @@ Future<void> fetchUnreadCount() async {
               children: [
               // CONFIGURATION SECTION
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start, // Aligns the bottoms of the containers
+                crossAxisAlignment: CrossAxisAlignment.start, // Aligns the bottoms of the containers (configuration section)
                 children: [
                   // SYSTEM MODE
                   Expanded(
@@ -509,15 +509,41 @@ Future<void> fetchUnreadCount() async {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Select System Mode:",
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: const Color.fromRGBO(30, 30, 30, 1.0),
-                          ),
-                        ),
-                        const SizedBox(height: 4), // margin between "system mode" and toggle
+                        Row(
+                          children: [
+                            Text(
+                              "Select System Mode:",
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: const Color.fromRGBO(30, 30, 30, 1.0),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Tooltip(
+                              message: "Select if you want the brooder to run\non its own or if you want to control it.",
+                              textAlign: TextAlign.center,
+                              triggerMode: TooltipTriggerMode.longPress,
+                              showDuration: const Duration(seconds: 3),
+                              preferBelow: true,
+                              verticalOffset: 12,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: ShapeDecoration(
+                                color: Colors.grey.shade700.withValues(alpha:0.8),
+                                shape: const _TooltipArrowBorder(),
+                              ),
+                              textStyle: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                              child: const Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),                        const SizedBox(height: 4), // margin between "system mode" and toggle
                         Container(
                           height: 48,
                           padding: const EdgeInsets.all(1), //border-like padding
@@ -914,4 +940,42 @@ Future<void> fetchUnreadCount() async {
     ),
     );
   }
+}
+
+// TOOL TIP MESSAGE DIALOGUE BOX WITH ARROW
+
+class _TooltipArrowBorder extends ShapeBorder {
+  final double arrowWidth;
+  final double arrowHeight;
+  final double radius;
+
+  const _TooltipArrowBorder({
+    this.radius = 8.0,
+    this.arrowWidth = 14.0,
+    this.arrowHeight = 8.0,
+  });
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.only(top: arrowHeight);
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => Path();
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    return Path()
+      ..addRRect(RRect.fromRectAndRadius(
+          Rect.fromLTRB(rect.left, rect.top + arrowHeight, rect.right, rect.bottom),
+          Radius.circular(radius)))
+      ..moveTo(rect.topCenter.dx - arrowWidth / 2, rect.top + arrowHeight)
+      ..lineTo(rect.topCenter.dx, rect.top)
+      ..lineTo(rect.topCenter.dx + arrowWidth / 2, rect.top + arrowHeight)
+      ..close();
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+
+  @override
+  ShapeBorder scale(double t) => this;
 }
