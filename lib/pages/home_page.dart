@@ -499,165 +499,177 @@ Future<void> fetchUnreadCount() async {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              Text(
-                "System Mode",
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-
-              Text(
-                "Switch between Automatic and Manual control",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isManualMode ? Icons.handyman_outlined : Icons.smart_toy_outlined,
-                      color: const Color.fromRGBO(32, 32, 32, 1.0),
-                    ),
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            isManualMode ? "Manual Mode" : "Automatic Mode",
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            isManualMode
-                                ? "User controls all devices"
-                                : "AI controls the system",
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Switch(
-                      value: isManualMode,
-                      // activeColor: Colors.orange,
-                      activeThumbColor: Colors.white,
-                      inactiveThumbColor: Colors.grey.shade700,
-
-                      // 👇 KEY PART: prevent solid fill look
-                      activeTrackColor: const Color(0xFFF9A825),
-                      inactiveTrackColor: Colors.grey.shade200,
-
-                      onChanged: _toggleMode,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-              Text(
-                "Chick Age",
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-
-              Text(
-                "Select the age of the chicks",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
+              // CONFIGURATION SECTION
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start, // Aligns the bottoms of the containers
                 children: [
-
-                  CompositedTransformTarget(
-                    link: _dropdownLink,
-                    child: InkWell(
-                      key: _dropdownKey, // ✅ attach key here
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () {
-                        if (_dropdownOverlay == null) {
-                          _showDropdown();
-                        } else {
-                          _removeDropdown();
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_month_outlined,
-                              color: Color.fromRGBO(32, 32, 32, 1.0),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                "Week $selectedWeek",
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                  // SYSTEM MODE
+                  Expanded(
+                    flex: 20, // FLEXIBLE WIDTH
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Select System Mode:",
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: const Color.fromRGBO(30, 30, 30, 1.0),
+                          ),
+                        ),
+                        const SizedBox(height: 4), // margin between "system mode" and toggle
+                        Container(
+                          height: 48,
+                          padding: const EdgeInsets.all(1), //border-like padding
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200, // Light gray background for the toggle area
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              // Automatic Button
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => _toggleMode(false),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: !isManualMode ? const Color(0xFF4A85F6) : Colors.transparent, // Blue when active
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.auto_awesome_outlined,
+                                          size: 18,
+                                          color: !isManualMode ? Colors.white : Colors.grey.shade700,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "Automatic",
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13,
+                                            fontWeight: !isManualMode ? FontWeight.w600 : FontWeight.w400,
+                                            color: !isManualMode ? Colors.white : Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Icon(
-                              _dropdownOverlay != null
-                                  ? Icons.keyboard_arrow_up_rounded
-                                  : Icons.keyboard_arrow_down_rounded,
-                            ),
-                          ],
+                              // Manual Button
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => _toggleMode(true),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isManualMode ? const Color(0xFF4A85F6) : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.pan_tool_outlined,
+                                          size: 18,
+                                          color: isManualMode ? Colors.white : Colors.grey.shade700,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "Manual",
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13,
+                                            fontWeight: isManualMode ? FontWeight.w600 : FontWeight.w400,
+                                            color: isManualMode ? Colors.white : Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 16), // margin between system mode and chick age
+
+                  // CHICK AGE 
+                  Expanded(
+                    flex: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Chicks' Age:",
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: const Color.fromRGBO(30, 30, 30, 1.0),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        CompositedTransformTarget(
+                          link: _dropdownLink,
+                          child: InkWell(
+                            key: _dropdownKey,
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              if (_dropdownOverlay == null) {
+                                _showDropdown();
+                              } else {
+                                _removeDropdown();
+                              }
+                            },
+                            child: Container(
+                              height: 48, // Matches height of the toggle
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white, // White background for dropdown
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 18,
+                                    color: Color.fromRGBO(50, 50, 50, 1.0),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "Week $selectedWeek",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color.fromRGBO(32, 32, 32, 1.0),
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    _dropdownOverlay != null
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
+              
               const SizedBox(height: 30),
                 Text("Video Feed",
                     style: GoogleFonts.inter(
