@@ -97,13 +97,10 @@ class FlockStatusCard extends StatelessWidget {
                   preferBelow: true,
                   verticalOffset: 12,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  
-                  // 👇 THIS IS THE ONLY PART THAT CHANGED 👇
                   decoration: BoxDecoration(
                     color: Colors.grey.shade700.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(8), // Matches the radius your arrow border had
                   ),
-                  // 👆 ---------------------------------- 👆
                   
                   textStyle: GoogleFonts.inter(
                     color: Colors.white,
