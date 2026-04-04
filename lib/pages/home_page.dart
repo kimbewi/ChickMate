@@ -118,6 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Material(
                     elevation: 4,
                     borderRadius: BorderRadius.circular(16),
+                    clipBehavior: Clip.antiAlias,
                     color: Colors.white,
                     child: SizedBox(
                       width: size.width,
