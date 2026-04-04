@@ -92,57 +92,75 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _removeDropdown() {
     _dropdownOverlay?.remove();
-    _dropdownOverlay = null;
+    setState(() {
+      _dropdownOverlay = null;
+    });
   }
 
   void _showDropdown() {
-  final overlay = Overlay.of(context)!;
-  final renderBox = _dropdownKey.currentContext!.findRenderObject() as RenderBox;
-  final size = renderBox.size;
-  final offset = renderBox.localToGlobal(Offset.zero);
+    final overlay = Overlay.of(context)!;
+    final renderBox = _dropdownKey.currentContext!.findRenderObject() as RenderBox;
+    final size = renderBox.size;
 
-  _dropdownOverlay = OverlayEntry(
-    builder: (context) => Positioned(
-      left: offset.dx,
-      top: offset.dy + size.height + 4, 
-      width: size.width,
-      child: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(6, (index) {
-            int week = index + 1;
-            return InkWell(
-              onTap: () {
-                setState(() {
-                  selectedWeek = week;
-                });
-                _updateChickWeek(week);
-                _removeDropdown();
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                color: selectedWeek == week
-                    ? Colors.white.withOpacity(0.08)
-                    : Colors.transparent,
-                child: Text(
-                  "Week $week",
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: selectedWeek == week
-                        ? FontWeight.w600
-                        : FontWeight.w400,
+    setState(() {
+      _dropdownOverlay = OverlayEntry(
+        builder: (context) => Stack(
+          children: [
+            TapRegion(
+              groupId: 'chickDropdown',
+              onTapOutside: (_) => _removeDropdown(),
+              child: CompositedTransformFollower(
+                link: _dropdownLink,
+                showWhenUnlinked: false,
+                offset: Offset(0, size.height + 4),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                    child: SizedBox(
+                      width: size.width,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(6, (index) {
+                          int week = index + 1;
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                selectedWeek = week;
+                              });
+                              _updateChickWeek(week);
+                              _removeDropdown();
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                              color: selectedWeek == week
+                                  ? Colors.grey.shade100
+                                  : Colors.transparent,
+                              child: Text(
+                                "Week $week",
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: selectedWeek == week
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            );
-          }),
+            ),
+          ],
         ),
-      ),
-    ),
-  );
+      );
+    });
 
     overlay.insert(_dropdownOverlay!);
   }
@@ -643,49 +661,52 @@ Future<void> fetchUnreadCount() async {
                         const SizedBox(height: 4),
                         CompositedTransformTarget(
                           link: _dropdownLink,
-                          child: InkWell(
-                            key: _dropdownKey,
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () {
-                              if (_dropdownOverlay == null) {
-                                _showDropdown();
-                              } else {
-                                _removeDropdown();
-                              }
-                            },
-                            child: Container(
-                              height: 48, // Matches height of the toggle
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white, // White background for dropdown
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.calendar_today_outlined,
-                                    size: 18,
-                                    color: Color.fromRGBO(50, 50, 50, 1.0),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      "Week $selectedWeek",
-                                      style: GoogleFonts.inter(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: const Color.fromRGBO(32, 32, 32, 1.0),
+                          child: TapRegion(
+                            groupId: 'chickDropdown',
+                            child: InkWell(
+                              key: _dropdownKey,
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () {
+                                if (_dropdownOverlay == null) {
+                                  _showDropdown();
+                                } else {
+                                  _removeDropdown();
+                                }
+                              },
+                              child: Container(
+                                height: 48, // Matches height of the toggle
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white, // White background for dropdown
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.calendar_today_outlined,
+                                      size: 18,
+                                      color: Color.fromRGBO(50, 50, 50, 1.0),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "Week $selectedWeek",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color.fromRGBO(32, 32, 32, 1.0),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Icon(
-                                    _dropdownOverlay != null
-                                        ? Icons.keyboard_arrow_up_rounded
-                                        : Icons.keyboard_arrow_down_rounded,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ],
+                                    Icon(
+                                      _dropdownOverlay != null
+                                          ? Icons.keyboard_arrow_up_rounded
+                                          : Icons.keyboard_arrow_down_rounded,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
