@@ -943,20 +943,15 @@ Future<void> fetchUnreadCount() async {
                   runSpacing: 12,
                   children: [
                     ControlCard(
-                      title: 'Exhaust Fan',
+                      title: 'Exhaust/Intake Fan',
                       icon: Icons.air_outlined,
-                      isOn: isExhaustFanOn,
+                      isOn: isExhaustFanOn || isIntakeFanOn,
                       onChanged: (value) {
-                        setState(() => isExhaustFanOn = value);
+                        setState(() {
+                          isExhaustFanOn = value;
+                          isIntakeFanOn = value;
+                        });
                         _updateControl('exhaustFan', value);
-                      },
-                    ),
-                    ControlCard(
-                      title: 'Intake Fan',
-                      icon: Icons.air_outlined,
-                      isOn: isIntakeFanOn,
-                      onChanged: (value) {
-                        setState(() => isIntakeFanOn = value);
                         _updateControl('intakeFan', value);
                       },
                     ),
