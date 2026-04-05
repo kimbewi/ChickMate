@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late DatabaseReference _sensorDataRef; 
   late DatabaseReference _controlsRef;
-  late DatabaseReference _flockStatusRef; // Reference for flock status (AI predictions)
+  late DatabaseReference _flockStatusRef; 
   StreamSubscription? _flockStatusSubscription; 
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
@@ -77,6 +77,28 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isDropdownOpen = false;
   final LayerLink _dropdownLink = LayerLink();
   OverlayEntry? _dropdownOverlay;
+
+  // NAVIGATION VARIABLES (for navbar navigation)
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _configKey = GlobalKey();
+  final GlobalKey _videoKey = GlobalKey();
+  final GlobalKey _envKey = GlobalKey();
+  final GlobalKey _controlsKey = GlobalKey();
+
+  int _activeIndex = 0;
+
+  void _scrollToSection(GlobalKey key, int index) {
+    setState(() => _activeIndex = index);
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+        alignment: 0.001, // puts the section right near the top of the screen
+      );
+    }
+  }
 
   void _toggleMode(bool value) {
   setState(() {
@@ -392,6 +414,7 @@ Future<void> fetchUnreadCount() async {
     _settingsSubscription?.cancel();
 
     _remoteRenderer.dispose();
+    _scrollController.dispose();
     _pc?.close();
     _channel?.sink.close();
     _flockStatusSubscription?.cancel();
@@ -495,7 +518,10 @@ Future<void> fetchUnreadCount() async {
           ]
         ),
       ),
-      body: Container(
+
+      body: Stack(
+      children:[
+      Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -513,18 +539,19 @@ Future<void> fetchUnreadCount() async {
             color: Colors.orange,    
             
           child: SingleChildScrollView(
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-          // child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              // CONFIGURATION SECTION
+              // -- configuration section --
               Row(
+                key: _configKey,
                 crossAxisAlignment: CrossAxisAlignment.start, // Aligns the bottoms of the containers (configuration section)
                 children: [
-                  // SYSTEM MODE
+                  // -- SYSTEM MODE -- 
                   Expanded(
-                    flex: 20, // FLEXIBLE WIDTH
+                    flex: 20, // flexible width
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -722,7 +749,8 @@ Future<void> fetchUnreadCount() async {
               const SizedBox(height: 24),
                 Text("VIDEO FEED",
                     style: GoogleFonts.inter(
-                        fontSize: 20, fontWeight: FontWeight.w700)),
+                        fontSize: 20, fontWeight: FontWeight.w700),
+                        key: _videoKey,),
                 const SizedBox(height: 12),
                 Card(
                 color: Colors.white,
@@ -822,6 +850,7 @@ Future<void> fetchUnreadCount() async {
                 
                 // -- environmental status section --
                 Row(
+                key: _envKey,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
@@ -918,6 +947,7 @@ Future<void> fetchUnreadCount() async {
                 
                 // -- controls section --
                 Row(
+                key: _controlsKey,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
@@ -1001,14 +1031,77 @@ Future<void> fetchUnreadCount() async {
                             ),
                   ],
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 90),
               ],             
             ),
           // ),
         ),
       ),
       ),
+      ),
+        Align(
+            alignment: Alignment.bottomCenter,
+            child: _buildFloatingNavBar(), 
+          ),
+      ],
     ),
+    );
+  }
+
+// for bottom navigation
+  Widget _buildFloatingNavBar() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
+      child: Container(
+        height: 75,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha:1),
+          borderRadius: BorderRadius.circular(40), 
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(0, Icons.tune_rounded, "Configuration", _configKey),
+            _buildNavItem(1, Icons.smart_display_outlined, "Video Feed", _videoKey),
+            _buildNavItem(2, Icons.device_thermostat_rounded, "Environmental\nStatus", _envKey),
+            _buildNavItem(3, Icons.settings_remote_outlined, "Controls", _controlsKey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label, GlobalKey key) {
+    final isActive = _activeIndex == index;
+    final color = isActive ? const Color(0xFFF9A825) : Colors.grey.shade400;
+
+    return GestureDetector(
+      onTap: () => _scrollToSection(key, index),
+      behavior: HitTestBehavior.opaque, 
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 26),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              color: color,
+              height: 1.1, 
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
