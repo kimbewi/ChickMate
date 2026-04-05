@@ -820,18 +820,25 @@ Future<void> fetchUnreadCount() async {
 
                 const SizedBox(height: 20),
                 
+                // -- environmental status section --
                 Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    'Environmental Status',
+                    'ENVIRONMENTAL STATUS',
                     style: GoogleFonts.inter(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0, // removing extra space in text's height
+                    ),
+                    // removing extra space in text's height
+                    textHeightBehavior: const TextHeightBehavior(
+                      applyHeightToFirstAscent: false, 
+                      applyHeightToLastDescent: false, 
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                    icon: const Icon(Icons.history, color: Color.fromRGBO(146, 138, 138, 1.0)),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -841,59 +848,74 @@ Future<void> fetchUnreadCount() async {
                   ),
                 ],
               ),
-                const SizedBox(height: 10),
-                 Column(
+
+                const SizedBox(height: 12),
+
+                // -- environmental status widgets --
+                Column(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: StatusCard(
-                            title: 'Ammonia Level',
-                            data: ammoniaLevel,
-                            unit: '%',
-                            icon: Icons.dangerous_outlined,
-                            iconColor: Colors.green,
+                    IntrinsicHeight(
+                      child:
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: StatusCard(
+                              title: 'Ammonia Level',
+                              data: ammoniaLevel,
+                              unit: '%',
+                              icon: Icons.dangerous_outlined,
+                              iconColor: Colors.green,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 3.0),
-                        Expanded(
-                          child: StatusCard(
-                            title: 'Temperature',
-                            data: temperature,
-                            unit: '°C',
-                            icon: Icons.thermostat,
-                            iconColor: Colors.redAccent,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: StatusCard(
+                              title: 'Temperature',
+                              data: temperature,
+                              unit: '°C',
+                              icon: Icons.thermostat,
+                              iconColor: Colors.redAccent,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 3.0), // spacing between rows
-                    Row(
-                      children: [
-                        Expanded(
-                          child: StatusCard(
-                            title: 'Humidity',
-                            data: humidity,
-                            unit: '%',
-                            icon: Icons.water_drop_outlined,
-                            iconColor: Colors.blueAccent,
+
+                    const SizedBox(height: 16), 
+
+                    IntrinsicHeight(
+                      child:
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: StatusCard(
+                              title: 'Humidity',
+                              data: humidity,
+                              unit: '%',
+                              icon: Icons.water_drop_outlined,
+                              iconColor: Colors.blueAccent,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 3.0),
-                        Expanded(
-                          child: StatusCard(
-                            title: 'Light Level',
-                            data: lightLevel,
-                            unit: 'lux',
-                            icon: Icons.wb_sunny_outlined,
-                            iconColor: Colors.yellowAccent,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: StatusCard(
+                              title: 'Light Level',
+                              data: lightLevel,
+                              unit: 'lux',
+                              icon: Icons.wb_sunny_outlined,
+                              iconColor: Colors.yellowAccent,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 30),
+
+                const SizedBox(height: 24),
+                
                 Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
