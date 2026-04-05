@@ -916,18 +916,19 @@ Future<void> fetchUnreadCount() async {
 
                 const SizedBox(height: 24),
                 
+                // -- controls section --
                 Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    'Controls',
+                    'CONTROLS',
                     style: GoogleFonts.inter(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.history, color: Color.fromRGBO(32, 32, 32, 1.0)),
+                    icon: const Icon(Icons.history, color: Color.fromRGBO(146, 138, 138, 1.0)),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -937,47 +938,67 @@ Future<void> fetchUnreadCount() async {
                   ),
                 ],
               ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+
+                const SizedBox(height: 12),
+
+                // -- controls widgets --
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ControlCard(
-                      title: 'Exhaust/Intake Fan',
-                      icon: Icons.air_outlined,
-                      isOn: isExhaustFanOn || isIntakeFanOn,
-                      onChanged: (value) {
-                        setState(() {
-                          isExhaustFanOn = value;
-                          isIntakeFanOn = value;
-                        });
-                        _updateControl('exhaustFan', value);
-                        _updateControl('intakeFan', value);
-                      },
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child:
+                              ControlCard(
+                                title: 'Exhaust/Intake Fan',
+                                icon: Icons.air_outlined,
+                                isOn: isExhaustFanOn || isIntakeFanOn,
+                                onChanged: (value) {
+                                  setState(() {
+                                    isExhaustFanOn = value;
+                                    isIntakeFanOn = value;
+                                  });
+                                  _updateControl('exhaustFan', value);
+                                  _updateControl('intakeFan', value);
+                                },
+                              ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          Expanded(
+                            child:
+                            ControlCard(
+                              title: 'Heater',
+                              icon: Icons.whatshot_outlined,
+                              isOn: isHeaterOn,
+                              onChanged: (value) {
+                                setState(() => isHeaterOn = value);
+                                _updateControl('heater', value);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    ControlCard(
-                      title: 'Heater',
-                      icon: Icons.whatshot_outlined,
-                      isOn: isHeaterOn,
-                      onChanged: (value) {
-                        setState(() => isHeaterOn = value);
-                        _updateControl('heater', value);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                SliderControlCard(
-                    title: 'Light Bulb',
-                    icon: Icons.lightbulb_outline,
-                    value: lightBrightness,
-                    onChanged: (newValue) {
-                      setState(() {
-                        lightBrightness = newValue;
-                      });
-                    },
-                      onChangeEnd: (newValue) {
-                        _updateControl('lightBrightness', newValue.round());
-                    },
-                  ),
+                          
+                          const SizedBox(height: 12),
+
+                          SliderControlCard(
+                              title: 'Light Bulb',
+                              icon: Icons.lightbulb_outline,
+                              value: lightBrightness,
+                              onChanged: (newValue) {
+                                setState(() {
+                                  lightBrightness = newValue;
+                                });
+                              },
+                                onChangeEnd: (newValue) {
+                                  _updateControl('lightBrightness', newValue.round());
+                              },
+                            ),
                   ],
                 ),
                 const SizedBox(height: 30),
