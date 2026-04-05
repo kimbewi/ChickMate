@@ -25,10 +25,8 @@ class ControlCard extends StatelessWidget {
     return Card(
       color: cardColor,
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        width: 150,
-        height: 150,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,8 +34,22 @@ class ControlCard extends StatelessWidget {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: iconColor, size: 40),
+
+                // -- tinted icon box --
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isOn 
+                        ? Colors.white.withValues(alpha: 0.2) 
+                        : iconColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 28),
+                ),
+
+                // -- toggle switch --
                 Transform.scale(
                   scale: 0.8,
                   child: Switch(
@@ -49,6 +61,10 @@ class ControlCard extends StatelessWidget {
                 ),
               ],
             ),
+
+            const SizedBox(height: 12),
+
+            // -- title and status text --
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -56,7 +72,11 @@ class ControlCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: titleColor)),
+                        color: titleColor,
+                        height: 1.2,)),
+
+                const SizedBox(height: 4),
+
                 Text(isOn ? 'On' : 'Off',
                     style: GoogleFonts.inter(fontSize: 14, color: statusColor)),
               ],
@@ -68,12 +88,12 @@ class ControlCard extends StatelessWidget {
   }
 }
 
-// REUSABLE WIDGET FOR SLIDER CONTROLS
+// -- for slider --
 class SliderControlCard extends StatelessWidget {
   final String title;
   final IconData icon;
-  final double value; // The current brightness (0-100)
-  final Function(double) onChanged; // Function to call when slider moves
+  final double value; 
+  final Function(double) onChanged; 
   final ValueChanged<double>? onChangeEnd;
 
   const SliderControlCard({
@@ -83,7 +103,6 @@ class SliderControlCard extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.onChangeEnd,
-    
   });
 
   @override
@@ -97,27 +116,39 @@ class SliderControlCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Row for Title and Icon ---
+            // --- slider icon and title row ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    Icon(icon, color: const Color(0xFFF9A825), size: 30),
+
+                    // -- icon with tinted box --
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9A825).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(icon, color: const Color(0xFFF9A825), size: 28),
+                    ),
+
                     const SizedBox(width: 12),
+
                     Text(
                       title,
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: const Color.fromRGBO(30, 30, 30, 1.0),
                       ),
                     ),
                   ],
                 ),
-                // --- Text to show the current % value ---
+
+                // -- brightness value --
                 Text(
-                  '${value.round()}%', // e.g., "50%"
+                  '${value.round()}%', 
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -127,20 +158,20 @@ class SliderControlCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 10), // Space
+            const SizedBox(height: 12), 
 
-            // --- The Slider Itself ---
-            Slider(
-              value: value, // The current value from our state
-              min: 0.0,     // Minimum brightness
-              max: 100.0,   // Maximum brightness
-              divisions: 100, // Snaps to 1% increments
-              label: '${value.round()}%', // Label that pops up on drag
-              activeColor: const Color(0xFFF9A825), // Slider "on" color
-              inactiveColor: Colors.grey.shade300, // Slider "off" color
-              onChanged: onChanged, // Function to call when user drags
-              onChangeEnd: onChangeEnd,
-            ),
+            // -- slider itself --
+              Slider(
+                value: value, // The current value from our state
+                min: 0.0,     // Minimum brightness
+                max: 100.0,   // Maximum brightness
+                divisions: 100, // Snaps to 1% increments
+                label: '${value.round()}%', // Label that pops up on drag
+                activeColor: const Color(0xFFF9A825), // Slider "on" color
+                inactiveColor: Colors.grey.shade300, // Slider "off" color
+                onChanged: onChanged, // Function to call when user drags
+                onChangeEnd: onChangeEnd,
+              ),
           ],
         ),
       ),
