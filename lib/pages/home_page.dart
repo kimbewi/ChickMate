@@ -427,7 +427,7 @@ Future<void> fetchUnreadCount() async {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(60), 
         child: AppBar(
-          backgroundColor: const Color.fromRGBO(253, 253, 253, 1.0),
+          backgroundColor: const Color.fromRGBO(249, 250, 251, 1.0),
           automaticallyImplyLeading: false,
           elevation: 2,
           title: Row(
@@ -441,12 +441,11 @@ Future<void> fetchUnreadCount() async {
                   Text(
                     "ChickMate",
                     style: GoogleFonts.inter(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: Color.fromRGBO(32, 32, 32, 1.0),
                     ),
                   ),
-                  const SizedBox(height: 3),
                   SizedBox(height: 18, child: LiveClock()),
                 ],
               ),
@@ -525,8 +524,8 @@ Future<void> fetchUnreadCount() async {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromRGBO(248, 248, 255, 1.0),
-              Color.fromRGBO(255, 247, 209, 1.0)
+              Color.fromRGBO(249, 250, 251, 1.0),
+              Color.fromRGBO(249, 250, 251, 1.0)
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -545,8 +544,25 @@ Future<void> fetchUnreadCount() async {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
               // -- configuration section --
-              Row(
+              Text(
                 key: _configKey,
+                "SYSTEM MODE",
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: const Color.fromRGBO(30, 30, 30, 1.0),
+                  height: 1.0,
+                ),
+                textHeightBehavior: 
+                const TextHeightBehavior(
+                  applyHeightToFirstAscent: false, 
+                  applyHeightToLastDescent: false, 
+                ),
+              ),
+              
+              const SizedBox(height: 12),
+
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start, // Aligns the bottoms of the containers (configuration section)
                 children: [
                   // -- SYSTEM MODE -- 
@@ -749,8 +765,14 @@ Future<void> fetchUnreadCount() async {
               const SizedBox(height: 24),
                 Text("VIDEO FEED",
                     style: GoogleFonts.inter(
-                        fontSize: 20, fontWeight: FontWeight.w700),
-                        key: _videoKey,),
+                        fontSize: 20, fontWeight: FontWeight.w800, height: 1.0),
+                        key: _videoKey,
+                        textHeightBehavior: 
+                        const TextHeightBehavior(
+                          applyHeightToFirstAscent: false, 
+                          applyHeightToLastDescent: false, 
+                        ),
+                    ),
                 const SizedBox(height: 12),
                 Card(
                 color: Colors.white,
@@ -819,8 +841,13 @@ Future<void> fetchUnreadCount() async {
                   "AI ANALYSIS",
                   style: GoogleFonts.inter(
                     fontSize: 18, 
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
                   ),
+                  textHeightBehavior: const TextHeightBehavior(
+                      applyHeightToFirstAscent: false, 
+                      applyHeightToLastDescent: false, 
+                    ),
                 ),
                 const SizedBox(height: 12),
 
@@ -857,7 +884,7 @@ Future<void> fetchUnreadCount() async {
                     'ENVIRONMENTAL STATUS',
                     style: GoogleFonts.inter(
                       fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       height: 1.0, // removing extra space in text's height
                     ),
                     // removing extra space in text's height
@@ -954,7 +981,12 @@ Future<void> fetchUnreadCount() async {
                     'CONTROLS',
                     style: GoogleFonts.inter(
                       fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
+                    ),
+                    textHeightBehavior: const TextHeightBehavior(
+                      applyHeightToFirstAscent: false, 
+                      applyHeightToLastDescent: false, 
                     ),
                   ),
                   IconButton(
@@ -1056,12 +1088,14 @@ Future<void> fetchUnreadCount() async {
         height: 75,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha:1),
-          borderRadius: BorderRadius.circular(40), 
+          borderRadius: BorderRadius.circular(40),
+          border: Border.all(color: Colors.grey.shade200, width: 1.5), 
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 30,
+              spreadRadius: 8,
+              offset: const Offset(0, 15),
             ),
           ],
         ),
