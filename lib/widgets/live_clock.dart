@@ -47,7 +47,7 @@ class _LiveClockState extends State<LiveClock> {
       _dateTime,
       style: GoogleFonts.inter(
         color: const Color.fromRGBO(32, 32, 32, 1.0),
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: FontWeight.w400,
       ),
     );

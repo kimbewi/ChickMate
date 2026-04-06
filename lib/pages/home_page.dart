@@ -441,12 +441,11 @@ Future<void> fetchUnreadCount() async {
                   Text(
                     "ChickMate",
                     style: GoogleFonts.inter(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: Color.fromRGBO(32, 32, 32, 1.0),
                     ),
                   ),
-                  const SizedBox(height: 3),
                   SizedBox(height: 18, child: LiveClock()),
                 ],
               ),
@@ -1089,12 +1088,14 @@ Future<void> fetchUnreadCount() async {
         height: 75,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha:1),
-          borderRadius: BorderRadius.circular(40), 
+          borderRadius: BorderRadius.circular(40),
+          border: Border.all(color: Colors.grey.shade200, width: 1.5), 
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 30,
+              spreadRadius: 8,
+              offset: const Offset(0, 15),
             ),
           ],
         ),

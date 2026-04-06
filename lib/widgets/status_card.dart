@@ -57,25 +57,49 @@ class StatusCard extends StatelessWidget {
             const SizedBox(height: 12),
             
             // --- widget title ---
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 13, 
-                fontWeight: FontWeight.w500,
-                color: const Color.fromRGBO(30, 30, 30, 1.0),
-              ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child:
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13, 
+                    fontWeight: FontWeight.w500,
+                    color: const Color.fromRGBO(30, 30, 30, 1.0),
+                  ),
+                ),
             ),
 
             const SizedBox(height: 4),
 
             // --- data value ---
-            Text(
-              displayData,
-              style: GoogleFonts.inter(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: const Color.fromRGBO(30, 30, 30, 1.0),
-              ),
+            if (isNumeric || data == '--')
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  displayData,
+                  style: GoogleFonts.inter(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: const Color.fromRGBO(30, 30, 30, 1.0),
+                    height: 1.0, 
+                  ),
+                ),
+              )
+            
+            else
+              Text(
+                displayData,
+                maxLines: 2, 
+                overflow: TextOverflow.ellipsis, 
+                style: GoogleFonts.inter(
+                  fontSize: 22, 
+                  fontWeight: FontWeight.w800,
+                  color: const Color.fromARGB(255, 255, 0, 0), 
+                  height: 1.2, 
+                ),
             ),
           ],
         ),
