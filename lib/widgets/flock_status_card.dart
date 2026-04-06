@@ -21,7 +21,7 @@ class FlockStatusCard extends StatelessWidget {
     bool isSoundCard = title.contains("Sounds");
 
     if (status == 'HOT') {
-      statusColor = Colors.red;
+      statusColor = const Color.fromARGB(255, 211, 47, 47);;
       tooltipMsg = isSoundCard
           ? 'Flock is unusually quiet or panting heavily.'
           : 'Chicks are panting and avoiding the heat source.';
