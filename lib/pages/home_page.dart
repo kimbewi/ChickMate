@@ -41,8 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String lightLevel = "--";
 
   // STATE VARIABLES FOR CONTROLS
-  bool isExhaustFanOn = false;
-  bool isIntakeFanOn = false;
+  bool isFansOn = false;
   bool isHeaterOn = false;
   double lightBrightness = 0.0;
 
@@ -279,8 +278,7 @@ class _MyHomePageState extends State<MyHomePage> {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         setState(() {
           // Use '?? false' to default to 'Off' if data is missing
-          isExhaustFanOn = data['exhaustFan'] ?? false;
-          isIntakeFanOn = data['intakeFan'] ?? false;
+          isFansOn = data['fans'] ?? false;
           isHeaterOn = data['heater'] ?? false;
           lightBrightness = (data['lightBrightness'] ?? 0.0).toDouble();
         });
@@ -1016,14 +1014,12 @@ Future<void> fetchUnreadCount() async {
                               ControlCard(
                                 title: 'Exhaust/Intake Fan',
                                 icon: Icons.air_outlined,
-                                isOn: isExhaustFanOn || isIntakeFanOn,
+                                isOn: isFansOn,
                                 onChanged: (value) {
                                   setState(() {
-                                    isExhaustFanOn = value;
-                                    isIntakeFanOn = value;
+                                    isFansOn = value;
                                   });
-                                  _updateControl('exhaustFan', value);
-                                  _updateControl('intakeFan', value);
+                                  _updateControl('fans', value);
                                 },
                               ),
                           ),
