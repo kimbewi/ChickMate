@@ -165,7 +165,7 @@ class SliderControlCard extends StatelessWidget {
                 value: value, // The current value from our state
                 min: 0.0,     // Minimum brightness
                 max: 100.0,   // Maximum brightness
-                divisions: 100, // Snaps to 1% increments
+                divisions: 10, // Snaps to 1% increments
                 label: '${value.round()}%', // Label that pops up on drag
                 activeColor: const Color(0xFFF9A825), // Slider "on" color
                 inactiveColor: Colors.grey.shade300, // Slider "off" color
