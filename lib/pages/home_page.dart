@@ -145,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       width: size.width,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: List.generate(6, (index) {
+                        children: List.generate(5, (index) {
                           int week = index + 1;
                           return InkWell(
                             onTap: () {
