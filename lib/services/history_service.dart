@@ -34,4 +34,27 @@ class HistoryService {
     }
   }
 
+  static Future<int> fetchUnreadCount() async {
+    final response = await http.get(Uri.parse(ApiConfig.notificationsUnreadCount));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['unreadCount'] ?? 0;
+    } else {
+      throw Exception("Failed to load unread count");
+    }
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    await http.put(Uri.parse(ApiConfig.notificationsMarkAllRead));
+  }
+
+  static Future<void> saveDeviceToken(String token) async {
+    await http.post(
+      Uri.parse(ApiConfig.saveToken),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"token": token}),
+    );
+  }
+
 }

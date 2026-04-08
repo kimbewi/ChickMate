@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-//import 'package:intl/intl.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../widgets/live_clock.dart';
 import '../widgets/status_card.dart';
@@ -9,9 +8,9 @@ import '../widgets/control_card.dart';
 import 'sensor_history.dart';
 import 'actuator_history.dart';
 import 'notification_page.dart';
+import '../services/history_service.dart';
 import 'full_screen.dart';
 import '../widgets/flock_status_card.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:flutter_webrtc/flutter_webrtc.dart'; // for webrtc
 import 'package:web_socket_channel/io.dart'; // for websocket
@@ -311,28 +310,19 @@ Future<void> setupFCM() async {
   String? token = await messaging.getToken();
   print("🔥 DEVICE TOKEN: $token");
 
-  // Send token to Node server
-  await http.post(
-    Uri.parse("http://192.168.0.104:5000/api/save-token"),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({"token": token}),
-  );
+  if (token != null) {
+    await HistoryService.saveDeviceToken(token);
+  }
 }
 
 Future<void> fetchUnreadCount() async {
   if (!mounted || isViewingNotifications) return;
 
   try {
-    final response = await http.get(
-      Uri.parse("http://192.168.0.104:5000/api/notifications/unread-count"),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        unreadCount = data['unreadCount'] ?? 0;
-      });
-    }
+    final count = await HistoryService.fetchUnreadCount();
+    setState(() {
+      unreadCount = count;
+    });
   } catch (e) {
     debugPrint("❌ Failed to fetch unread count: $e");
   }
@@ -468,9 +458,7 @@ Future<void> fetchUnreadCount() async {
                       unreadCount = 0;
           });
 
-          await http.put(
-            Uri.parse("http://192.168.0.104:5000/api/notifications/mark-all-read"),
-          );
+          await HistoryService.markAllNotificationsRead();
 
           await Navigator.push(
             context,
