@@ -129,13 +129,13 @@ class StatusCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Please check your internet connection or the sensor might be disconnected.",
+                      "Please check your internet connection and ensure the sensor wiring is secure.",
                       maxLines: 3, 
                       overflow: TextOverflow.ellipsis, 
                       style: GoogleFonts.inter(
                         fontSize: 10, 
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade600, 
+                        color: Colors.grey.shade700, 
                         height: 1.2, 
                       ),
                     ),
