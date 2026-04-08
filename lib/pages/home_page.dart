@@ -999,70 +999,105 @@ Future<void> fetchUnreadCount() async {
                 ],
               ),
 
-                const SizedBox(height: 12),
+                SizedBox(height: isManualMode ? 12.0 : 4.0),
 
                 // -- controls widgets --
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child:
-                              ControlCard(
-                                title: 'Exhaust/Intake Fan',
-                                icon: Icons.air_outlined,
-                                isOn: isFansOn,
-                                onChanged: (value) {
-                                  setState(() {
-                                    isFansOn = value;
-                                  });
-                                  _updateControl('fans', value);
-                                },
-                              ),
-                          ),
 
-                          const SizedBox(width: 16),
-
-                          Expanded(
-                            child:
-                            ControlCard(
-                              title: 'Heater',
-                              icon: Icons.whatshot_outlined,
-                              isOn: isHeaterOn,
-                              onChanged: (value) {
-                                setState(() => isHeaterOn = value);
-                                _updateControl('heater', value);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                if (!isManualMode)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F0FE), 
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF8AB4F8)), 
                     ),
-                          
-                          const SizedBox(height: 12),
-
-                          SliderControlCard(
-                              title: 'Light Bulb',
-                              icon: Icons.lightbulb_outline,
-                              value: lightBrightness,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  lightBrightness = newValue;
-                                });
-                              },
-                                onChangeEnd: (newValue) {
-                                  _updateControl('lightBrightness', newValue.round());
-                              },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: Color(0xFF1967D2), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Controls are locked while in Automatic Mode. Switch to Manual to take over.",
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF1967D2),
+                              height: 1.3,
                             ),
-                  ],
-                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                IgnorePointer(
+                  ignoring: !isManualMode, 
+                  child: Opacity(
+                    opacity: isManualMode ? 1.0 : 0.4,
+                    child:
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child:
+                                  ControlCard(
+                                    title: 'Fans',
+                                    icon: Icons.air_outlined,
+                                    isOn: isFansOn,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        isFansOn = value;
+                                      });
+                                      _updateControl('fans', value);
+                                    },
+                                  ),
+                              ),
+
+                              const SizedBox(width: 16),
+
+                              Expanded(
+                                child:
+                                ControlCard(
+                                  title: 'Heater',
+                                  icon: Icons.whatshot_outlined,
+                                  isOn: isHeaterOn,
+                                  onChanged: (value) {
+                                    setState(() => isHeaterOn = value);
+                                    _updateControl('heater', value);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                              
+                              const SizedBox(height: 12),
+
+                              SliderControlCard(
+                                  title: 'Light Bulb',
+                                  icon: Icons.lightbulb_outline,
+                                  value: lightBrightness,
+                                  onChanged: (newValue) {
+                                    setState(() {
+                                      lightBrightness = newValue;
+                                    });
+                                  },
+                                    onChangeEnd: (newValue) {
+                                      _updateControl('lightBrightness', newValue.round());
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                    ),
                 const SizedBox(height: 90),
               ],             
             ),
-          // ),
         ),
       ),
       ),
