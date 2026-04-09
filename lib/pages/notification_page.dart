@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/history_service.dart';
-// import 'dart:convert';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -22,31 +21,25 @@ class _NotificationPageState extends State<NotificationPage> {
     fetchNotifications();
   }
 
-  // --- ✅ Safe field access helper ---
   T? getField<T>(Map data, String key) {
-    if (data.containsKey(key) && data[key] != null) {
-      return data[key] as T;
-    }
+    if (data.containsKey(key) && data[key] != null) return data[key] as T;
     return null;
   }
 
   Future<void> fetchNotifications() async {
     try {
       final data = await HistoryService.fetchNotifications();
-
       setState(() {
         notifications = data;
         filteredNotifications = data;
         isLoading = false;
       });
-
     } catch (e) {
       debugPrint("❌ Notification fetch error: $e");
       setState(() => isLoading = false);
     }
   }
 
-  // --- Parse timestamp safely ---
   DateTime? parseTimestamp(Map n, {String key = 'created_at'}) {
     final isoTime = getField<String>(n, key);
     if (isoTime == null || isoTime.isEmpty) return null;
@@ -57,23 +50,30 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  // --- Format timestamp ---
   String formatTimestamp(Map n, {String key = 'created_at'}) {
     final dt = parseTimestamp(n, key: key);
     if (dt == null) return "No timestamp";
     return DateFormat('MMMM dd, yyyy – hh:mm a').format(dt);
   }
 
-  // --- Filters ---
+  String formatTimestampRaw(String? isoTime) {
+  if (isoTime == null || isoTime.isEmpty) return "No timestamp";
+  try {
+    final dt = DateTime.parse(isoTime).toLocal();
+    return DateFormat('MMMM dd, yyyy – hh:mm a').format(dt);
+  } catch (_) {
+    return "No timestamp";
+  }
+}
+
   void filterToday() {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final end = start.add(const Duration(days: 1));
-
     setState(() {
       filteredNotifications = notifications.where((n) {
         final ts = parseTimestamp(n);
-        if (ts == null) return true; // ✅ include notifications without timestamp
+        if (ts == null) return true;
         return ts.isAfter(start) && ts.isBefore(end);
       }).toList();
     });
@@ -83,7 +83,6 @@ class _NotificationPageState extends State<NotificationPage> {
     final now = DateTime.now();
     final startToday = DateTime(now.year, now.month, now.day);
     final startYesterday = startToday.subtract(const Duration(days: 1));
-
     setState(() {
       filteredNotifications = notifications.where((n) {
         final ts = parseTimestamp(n);
@@ -108,9 +107,7 @@ class _NotificationPageState extends State<NotificationPage> {
       default:
         duration = const Duration(hours: 1);
     }
-
     final now = DateTime.now();
-
     setState(() {
       filteredNotifications = notifications.where((n) {
         final ts = parseTimestamp(n);
@@ -126,7 +123,6 @@ class _NotificationPageState extends State<NotificationPage> {
     });
   }
 
-  // --- Filter dialog ---
   void showFilterOptions() {
     final TextEditingController controller = TextEditingController();
     String selectedUnit = "Minutes";
@@ -137,10 +133,7 @@ class _NotificationPageState extends State<NotificationPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            "Filter Notifications",
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-          ),
+          title: Text("Filter Notifications", style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -152,20 +145,14 @@ class _NotificationPageState extends State<NotificationPage> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          filterToday();
-                        },
+                        onPressed: () { Navigator.pop(context); filterToday(); },
                         child: const Text("Today"),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          filterYesterday();
-                        },
+                        onPressed: () { Navigator.pop(context); filterYesterday(); },
                         child: const Text("Yesterday"),
                       ),
                     ),
@@ -177,12 +164,18 @@ class _NotificationPageState extends State<NotificationPage> {
                 TextField(
                   controller: controller,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: "Enter value", border: const OutlineInputBorder(), errorText: errorText),
+                  decoration: InputDecoration(
+                    labelText: "Enter value",
+                    border: const OutlineInputBorder(),
+                    errorText: errorText,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: selectedUnit,
-                  items: ["Minutes", "Hours", "Days"].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
+                  items: ["Minutes", "Hours", "Days"]
+                      .map((unit) => DropdownMenuItem(value: unit, child: Text(unit)))
+                      .toList(),
                   onChanged: (value) => setModalState(() => selectedUnit = value!),
                   decoration: const InputDecoration(border: OutlineInputBorder()),
                 ),
@@ -190,14 +183,14 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () { Navigator.pop(context); resetFilter(); }, child: const Text("Reset")),
+            TextButton(
+              onPressed: () { Navigator.pop(context); resetFilter(); },
+              child: const Text("Reset"),
+            ),
             ElevatedButton(
               onPressed: () {
                 final int? value = int.tryParse(controller.text);
-                if (value == null || value <= 0) {
-                  setModalState(() { errorText = "Please enter a valid number"; });
-                  return;
-                }
+                if (value == null || value <= 0) { setModalState(() { errorText = "Please enter a valid number"; }); return; }
                 if (selectedUnit == "Minutes" && value > 60) { setModalState(() { errorText = "Maximum allowed is 60 minutes"; }); return; }
                 if (selectedUnit == "Hours" && value > 24) { setModalState(() { errorText = "Maximum allowed is 24 hours"; }); return; }
                 if (selectedUnit == "Days" && value > 7) { setModalState(() { errorText = "Maximum allowed is 7 days"; }); return; }
@@ -212,80 +205,89 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  // --- Severity helpers ---
-  Color severityColor(String? severity) {
-    switch (severity) {
-      case "HIGH": return Colors.redAccent;
-      case "MEDIUM": return Colors.orangeAccent;
-      case "LOW": return Colors.green;
-      default: return Colors.grey;
-    }
-  }
-
-  IconData severityIcon(String? severity) {
-    switch (severity) {
-      case "HIGH": return Icons.error_outline;
-      case "MEDIUM": return Icons.warning_amber_outlined;
-      case "LOW": return Icons.info_outline;
-      default: return Icons.notifications_none;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Notifications", style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         backgroundColor: const Color(0xFFFFE66A),
-        elevation: 1,
-        actions: [IconButton(icon: const Icon(Icons.filter_list), onPressed: showFilterOptions, tooltip: "Filter Data")],
+        foregroundColor: Colors.black87,
+        elevation: 2,
+        actions: [
+          IconButton(icon: const Icon(Icons.filter_list), onPressed: showFilterOptions, tooltip: "Filter Data"),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: fetchNotifications,
-        color: Colors.orange,
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : filteredNotifications.isEmpty
                 ? const Center(child: Text("No notifications"))
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     itemCount: filteredNotifications.length,
                     itemBuilder: (context, index) {
                       final n = filteredNotifications[index];
-
-                      final severity = getField<String>(n, 'severity');
-                      final type = getField<String>(n, 'type') ?? "Unknown";
+                      final sensor = getField<String>(n, 'sensor') ?? "Unknown Sensor";
                       final message = getField<String>(n, 'message') ?? "No message";
-                      final sensor = getField<String>(n, 'sensor') ?? "Unknown sensor";
                       final isRead = getField<bool>(n, 'is_read') ?? true;
 
                       return Card(
-                        elevation: 1,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(12),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(severityIcon(severity), color: severityColor(severity), size: 28),
-                              const SizedBox(width: 12),
+                              const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 24),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(type, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: severityColor(severity))),
+                                    Text(
+                                      sensor,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
                                     const SizedBox(height: 4),
-                                    Text(message, style: GoogleFonts.inter(fontSize: 14)),
+                                    Text(message, style: const TextStyle(fontSize: 13)),
                                     const SizedBox(height: 4),
-                                    Text("Sensor: $sensor", style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700])),
-                                    const SizedBox(height: 4),
-                                    Text(formatTimestamp(n), style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+                                    Text(formatTimestamp(n), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                    if (getField<bool>(n, 'resolved') ?? false) ...[
+                                      const SizedBox(height: 8),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                                          const SizedBox(width: 6),
+                                          const Text(
+                                            "Sensor recovered",
+                                            style: TextStyle(fontSize: 13, color: Colors.green),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        formatTimestamp(n, key: 'resolved_at'),
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
                               if (!isRead)
-                                Container(width: 8, height: 8, margin: const EdgeInsets.only(top: 4), decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(top: 4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.redAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
                             ],
                           ),
                         ),

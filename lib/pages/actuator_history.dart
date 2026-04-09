@@ -76,6 +76,19 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     }
   }
 
+  IconData getActuatorIcon(String? actuatorId) {
+    switch (actuatorId) {
+      case 'lightBrightness':
+        return Icons.lightbulb_outline;
+      case 'fans':
+        return Icons.air;
+      case 'heater':
+        return Icons.thermostat;
+      default:
+        return Icons.settings_remote;
+    }
+  }
+
   // --- Convert actuator status/value to display text ---
   String statusText(Map actuator) {
     final status = getField<String>(actuator, 'status');
@@ -234,19 +247,49 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
               : RefreshIndicator(
                   onRefresh: fetchActuatorData,
                   child: ListView.builder(
+                    padding: const EdgeInsets.all(12),
                     itemCount: filteredActuators.length,
                     itemBuilder: (context, index) {
                       final actuator = filteredActuators[index];
-                      final formattedTime = formatTimestamp(actuator);
+                      final actuatorId = getField<String>(actuator, 'actuator_id');
+                      final hasStatus = getField(actuator, 'status') != null;
+
                       return Card(
-                        margin: const EdgeInsets.all(10),
-                        child: ListTile(
-                          leading: const Icon(Icons.settings_remote, color: Colors.amber),
-                          title: Text(
-                            "${changeName(getField<String>(actuator, 'actuator_id'))} — ${getField(actuator, 'status') != null ? 'Status' : 'Value'}: ${statusText(actuator)}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(getActuatorIcon(actuatorId), color: Colors.amber, size: 24),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      changeName(actuatorId),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "${hasStatus ? 'Status' : 'Value'}: ${statusText(actuator)}",
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      formatTimestamp(actuator),
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          subtitle: Text("Date & Time: $formattedTime"),
                         ),
                       );
                     },
