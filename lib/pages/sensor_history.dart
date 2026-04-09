@@ -294,29 +294,33 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: ListTile(
-                          leading:
-                              const Icon(Icons.sensors, color: Colors.amber),
-                          title: const Text(
-                            "Sensor Reading",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                  "Temperature: ${displaySensor(sensor['temperature'], unit: '°C')}"),
-                              Text(
-                                  "Humidity: ${displaySensor(sensor['humidity'], unit: '%')}"),
-                              Text(
-                                  "Ammonia: ${displaySensor(sensor['ammonia'], unit: 'ppm')}"),
-                              Text(
-                                  "Light: ${displaySensor(sensor['light'], unit: 'lx')}"),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Date & Time: ${formatTimestamp(sensor)}",
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
+                              const Icon(Icons.sensors, color: Colors.amber, size: 28),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Sensor Reading",
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 4),
+                                      Text("Temperature: ${displaySensor(sensor['temperature'], unit: '°C')}", style: const TextStyle(fontSize: 13)),
+                                      Text("Humidity: ${displaySensor(sensor['humidity'], unit: '%')}", style: const TextStyle(fontSize: 13)),
+                                      Text("Ammonia: ${displaySensor(sensor['ammonia'], unit: 'ppm')}", style: const TextStyle(fontSize: 13)),
+                                      Text("Light: ${displaySensor(sensor['light'], unit: 'lx')}", style: const TextStyle(fontSize: 13)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      formatTimestamp(sensor),
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
