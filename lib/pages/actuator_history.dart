@@ -67,10 +67,8 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     switch (actuatorId) {
       case 'lightBrightness':
         return 'Light';
-      case 'exhaustFan':
-        return 'Exhaust Fan';
-      case 'intakeFan':
-        return 'Intake Fan';
+      case 'fans':
+        return 'Exhaust/Intake Fan';
       case 'heater':
         return 'Heater';
       default:
