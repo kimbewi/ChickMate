@@ -47,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // STATE VARIABLES FOR AI PREDICTIONS
   String flockBehavior = "--";
   String flockSound = "--";
+  String flockInterpretation = "--";
 
   // WebRTC VARIABLES
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
@@ -202,9 +203,9 @@ class _MyHomePageState extends State<MyHomePage> {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         setState(() {
-          flockBehavior =
-              data['cv']?.toString().toUpperCase() ?? '--';
+          flockBehavior = data['cv']?.toString().toUpperCase() ?? '--';
           flockSound = data['bioacoustic']?.toString().toUpperCase() ?? '--';
+          flockInterpretation = data['interpretation']?.toString() ?? '--';
         });
       }
     });
@@ -991,29 +992,60 @@ Future<void> fetchUnreadCount() async {
 
                 // -- controls widgets --
 
-                if (!isManualMode)
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F0FE), 
+                      color: isManualMode ? const Color(0xFFE8F5E9) : const Color(0xFFE8F0FE),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF8AB4F8)), 
+                      border: Border.all(
+                        color: isManualMode ? const Color(0xFF66BB6A) : const Color(0xFF8AB4F8),
+                      ),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start, // align icon to top
                       children: [
-                        const Icon(Icons.auto_awesome, color: Color(0xFF1967D2), size: 20),
+                        Icon(
+                          isManualMode ? Icons.recommend_outlined : Icons.auto_awesome,
+                          color: isManualMode ? const Color(0xFF2E7D32) : const Color(0xFF1967D2),
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            "Controls are locked while in Automatic Mode. Switch to Manual to take over.",
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF1967D2),
-                              height: 1.3,
-                            ),
-                          ),
+                          child: isManualMode
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "AI RECOMMENDED ACTION",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF2E7D32),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      flockInterpretation,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF2E7D32),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  "Controls are locked while in Automatic Mode. Switch to Manual to take over.",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF1967D2),
+                                    height: 1.3,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
