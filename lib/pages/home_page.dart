@@ -194,6 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
     fetchUnreadCount();
     setupFCM();
     _chickInfoRef = FirebaseDatabase.instance.ref('chickInfo');
+    _scrollController.addListener(_onScroll);
 
     // Listen to AI inferences for flock status
     _flockStatusRef = FirebaseDatabase.instance.ref('aiResult');
@@ -356,6 +357,39 @@ Future<void> fetchUnreadCount() async {
     _controlsRef.child(controlName).set(value);
   }
 
+  void _onScroll() {
+  // If scrolled to the bottom, always highlight Controls
+  if (_scrollController.position.pixels >= 
+      _scrollController.position.maxScrollExtent - 80) {
+    if (_activeIndex != 3) setState(() => _activeIndex = 3);
+    return;
+  }
+
+  final sections = [
+    (_configKey, 0),
+    (_videoKey, 1),
+    (_envKey, 2),
+    (_controlsKey, 3),
+  ];
+
+  for (int i = sections.length - 1; i >= 0; i--) {
+    final key = sections[i].$1;
+    final index = sections[i].$2;
+    final context = key.currentContext;
+    if (context == null) continue;
+
+    final box = context.findRenderObject() as RenderBox;
+    final position = box.localToGlobal(Offset.zero);
+
+    if (position.dy <= 120) {
+      if (_activeIndex != index) {
+        setState(() => _activeIndex = index);
+      }
+      break;
+    }
+  }
+}
+
   Future<void> _connect() async {
     await _remoteRenderer.initialize();
 
@@ -407,6 +441,7 @@ Future<void> fetchUnreadCount() async {
     _pc?.close();
     _channel?.sink.close();
     _flockStatusSubscription?.cancel();
+    _scrollController.removeListener(_onScroll);
     super.dispose();
   }
 
