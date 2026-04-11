@@ -47,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // STATE VARIABLES FOR AI PREDICTIONS
   String flockBehavior = "--";
   String flockSound = "--";
+  String flockInterpretation = "--";
 
   // WebRTC VARIABLES
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
@@ -193,6 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
     fetchUnreadCount();
     setupFCM();
     _chickInfoRef = FirebaseDatabase.instance.ref('chickInfo');
+    _scrollController.addListener(_onScroll);
 
     // Listen to AI inferences for flock status
     _flockStatusRef = FirebaseDatabase.instance.ref('aiResult');
@@ -202,9 +204,9 @@ class _MyHomePageState extends State<MyHomePage> {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         setState(() {
-          flockBehavior =
-              data['cv']?.toString().toUpperCase() ?? '--';
+          flockBehavior = data['cv']?.toString().toUpperCase() ?? '--';
           flockSound = data['bioacoustic']?.toString().toUpperCase() ?? '--';
+          flockInterpretation = data['interpretation']?.toString() ?? '--';
         });
       }
     });
@@ -355,6 +357,39 @@ Future<void> fetchUnreadCount() async {
     _controlsRef.child(controlName).set(value);
   }
 
+  void _onScroll() {
+  // If scrolled to the bottom, always highlight Controls
+  if (_scrollController.position.pixels >= 
+      _scrollController.position.maxScrollExtent - 80) {
+    if (_activeIndex != 3) setState(() => _activeIndex = 3);
+    return;
+  }
+
+  final sections = [
+    (_configKey, 0),
+    (_videoKey, 1),
+    (_envKey, 2),
+    (_controlsKey, 3),
+  ];
+
+  for (int i = sections.length - 1; i >= 0; i--) {
+    final key = sections[i].$1;
+    final index = sections[i].$2;
+    final context = key.currentContext;
+    if (context == null) continue;
+
+    final box = context.findRenderObject() as RenderBox;
+    final position = box.localToGlobal(Offset.zero);
+
+    if (position.dy <= 120) {
+      if (_activeIndex != index) {
+        setState(() => _activeIndex = index);
+      }
+      break;
+    }
+  }
+}
+
   Future<void> _connect() async {
     await _remoteRenderer.initialize();
 
@@ -406,6 +441,7 @@ Future<void> fetchUnreadCount() async {
     _pc?.close();
     _channel?.sink.close();
     _flockStatusSubscription?.cancel();
+    _scrollController.removeListener(_onScroll);
     super.dispose();
   }
 
@@ -571,7 +607,7 @@ Future<void> fetchUnreadCount() async {
                             Tooltip(
                               message: "Select if you want the brooder to run\non its own or if you want to control it.",
                               textAlign: TextAlign.center,
-                              triggerMode: TooltipTriggerMode.longPress,
+                              triggerMode: TooltipTriggerMode.tap,
                               showDuration: const Duration(seconds: 3),
                               preferBelow: true,
                               verticalOffset: 12,
@@ -991,29 +1027,60 @@ Future<void> fetchUnreadCount() async {
 
                 // -- controls widgets --
 
-                if (!isManualMode)
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F0FE), 
+                      color: isManualMode ? const Color(0xFFE8F5E9) : const Color(0xFFE8F0FE),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF8AB4F8)), 
+                      border: Border.all(
+                        color: isManualMode ? const Color(0xFF66BB6A) : const Color(0xFF8AB4F8),
+                      ),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start, // align icon to top
                       children: [
-                        const Icon(Icons.auto_awesome, color: Color(0xFF1967D2), size: 20),
+                        Icon(
+                          isManualMode ? Icons.recommend_outlined : Icons.auto_awesome,
+                          color: isManualMode ? const Color(0xFF2E7D32) : const Color(0xFF1967D2),
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            "Controls are locked while in Automatic Mode. Switch to Manual to take over.",
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF1967D2),
-                              height: 1.3,
-                            ),
-                          ),
+                          child: isManualMode
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "AI RECOMMENDED ACTION",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF2E7D32),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      flockInterpretation,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF2E7D32),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  "Controls are locked while in Automatic Mode. Switch to Manual to take over.",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF1967D2),
+                                    height: 1.3,
+                                  ),
+                                ),
                         ),
                       ],
                     ),

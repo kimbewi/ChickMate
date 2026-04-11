@@ -92,7 +92,7 @@ class FlockStatusCard extends StatelessWidget {
                 Tooltip(
                   message: tooltipMsg,
                   textAlign: TextAlign.center,
-                  triggerMode: TooltipTriggerMode.longPress,
+                  triggerMode: TooltipTriggerMode.tap,
                   showDuration: const Duration(seconds: 3),
                   preferBelow: true,
                   verticalOffset: 12,
