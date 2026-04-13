@@ -4,8 +4,15 @@ import '../config/api_config.dart';
 
 class HistoryService {
 
-  static Future<List<dynamic>> fetchSensors() async {
-    final response = await http.get(Uri.parse(ApiConfig.sensors));
+  static Future<List<dynamic>> fetchSensors({required DateTime since}) async {
+    final uri = Uri.parse(ApiConfig.sensors).replace(
+      queryParameters: {
+        'limit': '10000',
+        'since': since.toUtc().toIso8601String(),
+      },
+    );
+
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -14,8 +21,15 @@ class HistoryService {
     }
   }
 
-  static Future<List<dynamic>> fetchActuators() async {
-    final response = await http.get(Uri.parse(ApiConfig.actuators));
+  static Future<List<dynamic>> fetchActuators({required DateTime since}) async {
+    final uri = Uri.parse(ApiConfig.actuators).replace(
+      queryParameters: {
+        'limit': '500',
+        'since': since.toUtc().toIso8601String(),
+      },
+    );
+
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
