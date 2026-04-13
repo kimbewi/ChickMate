@@ -61,8 +61,6 @@ class _MyHomePageState extends State<MyHomePage> {
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
 
-  late DatabaseReference _settingsRef;
-  StreamSubscription? _settingsSubscription;
   bool isManualMode = false; 
 
   bool isViewingNotifications = false;
@@ -104,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
     isManualMode = value;
   });
 
-    _settingsRef.child('manualOverride').set(value);
+    _controlsRef.child('manualOverride').set(value);
   }
 
   void _updateChickWeek(int week) {
@@ -282,19 +280,10 @@ class _MyHomePageState extends State<MyHomePage> {
           isFansOn = data['fans'] ?? false;
           isHeaterOn = data['heater'] ?? false;
           lightBrightness = (data['lightBrightness'] ?? 0.0).toDouble();
-        });
-      }
-      // If snapshot doesn't exist, they will keep their default values
-    });
-    _settingsRef = FirebaseDatabase.instance.ref('currentSettings');
-
-    _settingsSubscription = _settingsRef.onValue.listen((event) {
-      if (event.snapshot.exists) {
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
-        setState(() {
           isManualMode = data['manualOverride'] ?? false;
         });
       }
+      // If snapshot doesn't exist, they will keep their default values
     });
   }
 
@@ -434,7 +423,6 @@ Future<void> fetchUnreadCount() async {
     _sensorDataSubscription?.cancel();
     _controlsSubscription?.cancel();
     _chickInfoSubscription?.cancel();
-    _settingsSubscription?.cancel();
 
     _remoteRenderer.dispose();
     _scrollController.dispose();
@@ -941,7 +929,7 @@ Future<void> fetchUnreadCount() async {
                             child: StatusCard(
                               title: 'Ammonia Level',
                               data: ammoniaLevel,
-                              unit: '%',
+                              unit: 'ppm',
                               icon: Icons.dangerous_outlined,
                               iconColor: Colors.green,
                             ),
