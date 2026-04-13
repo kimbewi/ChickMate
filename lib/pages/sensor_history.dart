@@ -14,27 +14,25 @@ class SensorHistoryPage extends StatefulWidget {
 
 class _SensorHistoryPageState extends State<SensorHistoryPage> {
   List sensors = [];
-  List filteredSensors = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchSensors();
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    fetchData(today);
   }
 
-  Future<void> fetchSensors() async {
+  Future<void> fetchData(DateTime since) async {
+    setState(() => isLoading = true);
     try {
-      final data = await HistoryService.fetchSensors();
-
+      final data = await HistoryService.fetchSensors(since: since); 
       setState(() {
-        sensors = data;
-        filteredSensors = data;
+        sensors = data;       // or actuators = data
         isLoading = false;
       });
-
     } catch (e) {
-      print("Error fetching sensors: $e");
+      debugPrint("❌ Fetch error: $e");
       setState(() => isLoading = false);
     }
   }
@@ -63,63 +61,28 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
 
   void filterToday() {
     final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-
-    setState(() {
-      filteredSensors = sensors.where((sensor) {
-        final ts = parseTimestamp(sensor);
-        if (ts == null) return true; // keep sensor even if timestamp is missing
-        return ts.isAfter(start) && ts.isBefore(end);
-      }).toList();
-    });
+    fetchData(DateTime(now.year, now.month, now.day));
   }
 
   void filterYesterday() {
     final now = DateTime.now();
-    final startOfToday = DateTime(now.year, now.month, now.day);
-    final startOfYesterday = startOfToday.subtract(const Duration(days: 1));
-
-    setState(() {
-      filteredSensors = sensors.where((sensor) {
-        final ts = parseTimestamp(sensor);
-        if (ts == null) return true;
-        return ts.isAfter(startOfYesterday) && ts.isBefore(startOfToday);
-      }).toList();
-    });
+    fetchData(DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1)));
   }
 
   void filterByCustomDuration(int value, String unit) {
     Duration duration;
     switch (unit) {
-      case "Minutes":
-        duration = Duration(minutes: value);
-        break;
-      case "Hours":
-        duration = Duration(hours: value);
-        break;
-      case "Days":
-        duration = Duration(days: value);
-        break;
-      default:
-        duration = const Duration(hours: 1);
+      case "Minutes": duration = Duration(minutes: value); break;
+      case "Hours":   duration = Duration(hours: value); break;
+      case "Days":    duration = Duration(days: value); break;
+      default:        duration = const Duration(hours: 1);
     }
-
-    final now = DateTime.now();
-
-    setState(() {
-      filteredSensors = sensors.where((sensor) {
-        final ts = parseTimestamp(sensor);
-        if (ts == null) return true; // keep entries without timestamp
-        return ts.isAfter(now.subtract(duration));
-      }).toList();
-    });
+    fetchData(DateTime.now().subtract(duration));
   }
 
   void resetFilter() {
-    setState(() {
-      filteredSensors = sensors;
-    });
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    fetchData(today); // reset goes back to today
   }
 
   void showFilterOptions() {
@@ -279,15 +242,18 @@ class _SensorHistoryPageState extends State<SensorHistoryPage> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : filteredSensors.isEmpty
+          : sensors.isEmpty
               ? const Center(child: Text("No sensor data found"))
               : RefreshIndicator(
-                  onRefresh: fetchSensors,
+                  onRefresh: () async {
+                    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+                    await fetchData(today);
+                  },
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: filteredSensors.length,
+                    itemCount: sensors.length,
                     itemBuilder: (context, index) {
-                      final sensor = filteredSensors[index];
+                      final sensor = sensors[index];
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         elevation: 2,

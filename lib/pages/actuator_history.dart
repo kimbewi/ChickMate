@@ -13,14 +13,14 @@ class ActuatorHistoryPage extends StatefulWidget {
 }
 
 class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
-  List<dynamic> actuators = [];
-  List<dynamic> filteredActuators = [];
+  List actuators = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchActuatorData();
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    fetchData(today);
   }
 
   // --- Safe field access ---
@@ -29,18 +29,16 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     return null;
   }
 
-  Future<void> fetchActuatorData() async {
+  Future<void> fetchData(DateTime since) async {
+    setState(() => isLoading = true);
     try {
-      final data = await HistoryService.fetchActuators();
-
+      final data = await HistoryService.fetchActuators(since: since); 
       setState(() {
-        actuators = data;
-        filteredActuators = data;
+        actuators = data;      
         isLoading = false;
       });
-
     } catch (e) {
-      debugPrint("❌ Actuator fetch error: $e");
+      debugPrint("❌ Fetch error: $e");
       setState(() => isLoading = false);
     }
   }
@@ -101,63 +99,28 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
   // --- Filters ---
   void filterToday() {
     final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-
-    setState(() {
-      filteredActuators = actuators.where((a) {
-        final ts = parseTimestamp(a);
-        if (ts == null) return true; // include missing timestamp
-        return ts.isAfter(start) && ts.isBefore(end);
-      }).toList();
-    });
+    fetchData(DateTime(now.year, now.month, now.day));
   }
 
   void filterYesterday() {
     final now = DateTime.now();
-    final startToday = DateTime(now.year, now.month, now.day);
-    final startYesterday = startToday.subtract(const Duration(days: 1));
-
-    setState(() {
-      filteredActuators = actuators.where((a) {
-        final ts = parseTimestamp(a);
-        if (ts == null) return true;
-        return ts.isAfter(startYesterday) && ts.isBefore(startToday);
-      }).toList();
-    });
+    fetchData(DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1)));
   }
 
   void filterByCustomDuration(int value, String unit) {
     Duration duration;
     switch (unit) {
-      case "Minutes":
-        duration = Duration(minutes: value);
-        break;
-      case "Hours":
-        duration = Duration(hours: value);
-        break;
-      case "Days":
-        duration = Duration(days: value);
-        break;
-      default:
-        duration = const Duration(hours: 1);
+      case "Minutes": duration = Duration(minutes: value); break;
+      case "Hours":   duration = Duration(hours: value); break;
+      case "Days":    duration = Duration(days: value); break;
+      default:        duration = const Duration(hours: 1);
     }
-
-    final now = DateTime.now();
-
-    setState(() {
-      filteredActuators = actuators.where((a) {
-        final ts = parseTimestamp(a);
-        if (ts == null) return true;
-        return ts.isAfter(now.subtract(duration));
-      }).toList();
-    });
+    fetchData(DateTime.now().subtract(duration));
   }
 
   void resetFilter() {
-    setState(() {
-      filteredActuators = actuators;
-    });
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    fetchData(today); // reset goes back to today
   }
 
   void showFilterOptions() {
@@ -242,15 +205,18 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : filteredActuators.isEmpty
+          : actuators.isEmpty
               ? const Center(child: Text("No actuator data found"))
               : RefreshIndicator(
-                  onRefresh: fetchActuatorData,
+                  onRefresh: () async {
+                    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+                    await fetchData(today);
+                  },
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: filteredActuators.length,
+                    itemCount: actuators.length,
                     itemBuilder: (context, index) {
-                      final actuator = filteredActuators[index];
+                      final actuator = actuators[index];
                       final actuatorId = getField<String>(actuator, 'actuator_id');
                       final hasStatus = getField(actuator, 'status') != null;
 
