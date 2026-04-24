@@ -18,23 +18,59 @@ class FlockStatusCard extends StatelessWidget {
     Color statusColor = Colors.grey;
     String tooltipMsg = 'Waiting for data...';
 
-    bool isSoundCard = title.contains("Sounds");
+    final bool isSoundCard = title.contains("Sounds");
+
+    final Map<String, Map<String, String>> behaviorMap = {
+      'HOT': {
+        'label': 'DISPERSED',
+        'tooltip': 'Chicks are panting and avoiding the heat source.',
+      },
+      'NORMAL': {
+        'label': 'EVENLY DISTRIBUTED',
+        'tooltip': 'Chicks are active and spread out evenly.',
+      },
+      'COLD': {
+        'label': 'HUDDLING',
+        'tooltip': 'Chicks are huddling together to stay warm.',
+      },
+    };
+
+    final Map<String, Map<String, String>> soundMap = {
+      'HOT': {
+        'label': 'LOW-PITCH',
+        'tooltip': 'Flock is unusually quiet or panting heavily.',
+      },
+      'NORMAL': {
+        'label': 'MODERATE',
+        'tooltip': 'Calm and normal chirping.',
+      },
+      'COLD': {
+        'label': 'HIGH-PITCH',
+        'tooltip': 'Loud, high-pitched distress peeps.',
+      },
+      'REJECTION': {
+        'label': 'UNPREDICTABLE',
+        'tooltip': 'Irregular or abnormal vocalization detected.',
+      },
+    };
+
+    final selectedMap = isSoundCard ? soundMap : behaviorMap;
+
+    final data = selectedMap[status] ?? {
+      'label': 'UNKNOWN',
+      'tooltip': 'No data available.',
+    };
+
+    final String displayValue = data['label']!;
 
     if (status == 'HOT') {
-      statusColor = const Color.fromARGB(255, 211, 47, 47);;
-      tooltipMsg = isSoundCard
-          ? 'Flock is unusually quiet or panting heavily.'
-          : 'Chicks are panting and avoiding the heat source.';
+      statusColor = const Color.fromARGB(255, 211, 47, 47);
     } else if (status == 'COLD') {
       statusColor = Colors.blueAccent;
-      tooltipMsg = isSoundCard
-          ? 'Loud, high-pitched distress peeps.'
-          : 'Chicks are huddling together to stay warm.';
     } else if (status == 'NORMAL') {
       statusColor = Colors.green;
-      tooltipMsg = isSoundCard
-          ? 'Calm and normal chirping.'
-          : 'Chicks are active and spread out evenly.';
+    } else if (status == 'REJECTION') {
+      statusColor = Colors.orange; // ⚠️ stands out (good for anomaly)
     }
 
     return Card(
@@ -57,7 +93,7 @@ class FlockStatusCard extends StatelessWidget {
               ),
               child: Image.asset(
                 iconAsset,
-                height: 33, 
+                height: 36, 
                 width: 33,
                 errorBuilder: (context, error, stackTrace) =>
                     const Icon(Icons.pets, size: 24),
@@ -79,16 +115,29 @@ class FlockStatusCard extends StatelessWidget {
             // Status and Tooltip Row
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  status,
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: statusColor,
-                  ),
-                ),
-                const SizedBox(width: 8),
+              // children: [
+                // Text(
+                //   displayValue,
+                //   style: GoogleFonts.inter(
+                //     fontSize: 13,
+                //     fontWeight: FontWeight.w800,
+                //     color: statusColor,
+                //   ),
+                // ),
+                children: [
+                    Expanded(
+                      child: Text(
+                        displayValue,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                 Tooltip(
                   message: tooltipMsg,
                   textAlign: TextAlign.center,

@@ -848,7 +848,7 @@ Future<void> fetchUnreadCount() async {
                 const SizedBox(height: 24),
 
                 Text(
-                  "AI ANALYSIS",
+                  "AI PREDICTION",
                   style: GoogleFonts.inter(
                     fontSize: 18, 
                     fontWeight: FontWeight.w800,
