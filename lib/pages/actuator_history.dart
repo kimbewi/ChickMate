@@ -115,9 +115,9 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     fetchData(now.subtract(const Duration(minutes: 30)));
   }
 
-  void filterLast1Hour() {
+  void filterLast10Mins() {
     final now = DateTime.now();
-    fetchData(now.subtract(const Duration(hours: 1)));
+    fetchData(now.subtract(const Duration(minutes: 10)));
   }
 
   void filterLast24Hours() {
@@ -142,21 +142,6 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     fetchData(today);
   }
 
-  void showFilterOptions(BuildContext ctx) {
-    FilterDialog.show(
-      ctx,
-      title: "Filter Actuator Data",
-      quickFilters: [
-        FilterOption(label: "Yesterday",  onTap: filterYesterday),
-        FilterOption(label: "30 Minutes", onTap: filterLast30Mins),
-        FilterOption(label: "1 Hour",     onTap: filterLast1Hour),
-        FilterOption(label: "24 Hours",   onTap: filterLast24Hours),
-      ],
-      onReset: resetFilter,
-      onCustomDuration: filterByCustomDuration,
-    );
-  }
-
   // --- 🧱 UI ---
   @override
   Widget build(BuildContext context) {
@@ -174,12 +159,12 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
                 debugPrint("🔔 Filter button tapped");
                 FilterDialog.show(
                   innerContext,
-                  title: "Filter Sensor Data",
+                  title: "Filter Actuator Data",
                   quickFilters: [
-                    FilterOption(label: "Yesterday",  onTap: filterYesterday),
+                    FilterOption(label: "10 Minutes", onTap: filterLast10Mins),
                     FilterOption(label: "30 Minutes", onTap: filterLast30Mins),
-                    FilterOption(label: "1 Hour",     onTap: filterLast1Hour),
                     FilterOption(label: "24 Hours",   onTap: filterLast24Hours),
+                    FilterOption(label: "Yesterday",  onTap: filterYesterday),
                   ],
                   onReset: resetFilter,
                   onCustomDuration: filterByCustomDuration,

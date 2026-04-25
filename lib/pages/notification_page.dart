@@ -129,13 +129,13 @@ class _NotificationPageState extends State<NotificationPage> {
     });
   }
 
-  void filterLast1Hour() {
+  void filterLast10Mins() {
     final now = DateTime.now();
     setState(() {
       filteredNotifications = notifications.where((n) {
         final ts = parseTimestamp(n);
         if (ts == null) return true;
-        return ts.isAfter(now.subtract(const Duration(hours: 1)));
+        return ts.isAfter(now.subtract(const Duration(minutes: 10)));
       }).toList();
     });
   }
@@ -173,11 +173,11 @@ class _NotificationPageState extends State<NotificationPage> {
                 innerContext,
                 title: "Filter Notifications",
                 quickFilters: [
-                  FilterOption(label: "Yesterday",  onTap: filterYesterday),
-                  FilterOption(label: "30 Minutes", onTap: filterLast30Mins),
-                  FilterOption(label: "1 Hour",     onTap: filterLast1Hour),
-                  FilterOption(label: "24 Hours",   onTap: filterLast24Hours),
-                ],
+                    FilterOption(label: "10 Minutes", onTap: filterLast10Mins),
+                    FilterOption(label: "30 Minutes", onTap: filterLast30Mins),
+                    FilterOption(label: "24 Hours",   onTap: filterLast24Hours),
+                    FilterOption(label: "Yesterday",  onTap: filterYesterday),
+                  ],
                 onReset: resetFilter,
                 onCustomDuration: filterByCustomDuration,
               ),
