@@ -4,14 +4,13 @@ import '../config/api_config.dart';
 
 class HistoryService {
 
-  static Future<List<dynamic>> fetchSensors({required DateTime since}) async {
-    final uri = Uri.parse(ApiConfig.sensors).replace(
-      queryParameters: {
-        'limit': '10000',
-        'since': since.toUtc().toIso8601String(),
-      },
-    );
+  static Future<List<dynamic>> fetchSensors({DateTime? since, DateTime? until}) async {
+    final Map<String, String> params = {'limit': '10000'};
+    
+    if (since != null) params['since'] = since.toUtc().toIso8601String();
+    if (until != null) params['until'] = until.toUtc().toIso8601String();
 
+    final uri = Uri.parse(ApiConfig.sensors).replace(queryParameters: params);
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
@@ -21,14 +20,13 @@ class HistoryService {
     }
   }
 
-  static Future<List<dynamic>> fetchActuators({required DateTime since}) async {
-    final uri = Uri.parse(ApiConfig.actuators).replace(
-      queryParameters: {
-        'limit': '500',
-        'since': since.toUtc().toIso8601String(),
-      },
-    );
+  static Future<List<dynamic>> fetchActuators({DateTime? since, DateTime? until}) async {
+    final Map<String, String> params = {'limit': '500'};
+    
+    if (since != null) params['since'] = since.toUtc().toIso8601String();
+    if (until != null) params['until'] = until.toUtc().toIso8601String();
 
+    final uri = Uri.parse(ApiConfig.actuators).replace(queryParameters: params);
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
@@ -38,8 +36,14 @@ class HistoryService {
     }
   }
 
-  static Future<List<dynamic>> fetchNotifications() async {
-    final response = await http.get(Uri.parse(ApiConfig.notifications));
+  static Future<List<dynamic>> fetchNotifications({DateTime? since, DateTime? until}) async {
+    final Map<String, String> params = {};
+    
+    if (since != null) params['since'] = since.toUtc().toIso8601String();
+    if (until != null) params['until'] = until.toUtc().toIso8601String();
+
+    final uri = Uri.parse(ApiConfig.notifications).replace(queryParameters: params);
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       return json.decode(response.body);

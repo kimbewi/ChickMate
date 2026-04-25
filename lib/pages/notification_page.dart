@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/history_service.dart';
+import '../widgets/filter_dialog.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -117,92 +118,43 @@ class _NotificationPageState extends State<NotificationPage> {
     });
   }
 
+  void filterLast30Mins() {
+    final now = DateTime.now();
+    setState(() {
+      filteredNotifications = notifications.where((n) {
+        final ts = parseTimestamp(n);
+        if (ts == null) return true;
+        return ts.isAfter(now.subtract(const Duration(minutes: 30)));
+      }).toList();
+    });
+  }
+
+  void filterLast10Mins() {
+    final now = DateTime.now();
+    setState(() {
+      filteredNotifications = notifications.where((n) {
+        final ts = parseTimestamp(n);
+        if (ts == null) return true;
+        return ts.isAfter(now.subtract(const Duration(minutes: 10)));
+      }).toList();
+    });
+  }
+
+  void filterLast24Hours() {
+    final now = DateTime.now();
+    setState(() {
+      filteredNotifications = notifications.where((n) {
+        final ts = parseTimestamp(n);
+        if (ts == null) return true;
+        return ts.isAfter(now.subtract(const Duration(hours: 24)));
+      }).toList();
+    });
+  }
+
   void resetFilter() {
     setState(() {
       filteredNotifications = notifications;
     });
-  }
-
-  void showFilterOptions() {
-    final TextEditingController controller = TextEditingController();
-    String selectedUnit = "Minutes";
-    String? errorText;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Filter Notifications", style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Quick Filters", style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () { Navigator.pop(context); filterToday(); },
-                        child: const Text("Today"),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () { Navigator.pop(context); filterYesterday(); },
-                        child: const Text("Yesterday"),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const Text("Custom Duration", style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Enter value",
-                    border: const OutlineInputBorder(),
-                    errorText: errorText,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedUnit,
-                  items: ["Minutes", "Hours", "Days"]
-                      .map((unit) => DropdownMenuItem(value: unit, child: Text(unit)))
-                      .toList(),
-                  onChanged: (value) => setModalState(() => selectedUnit = value!),
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () { Navigator.pop(context); resetFilter(); },
-              child: const Text("Reset"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final int? value = int.tryParse(controller.text);
-                if (value == null || value <= 0) { setModalState(() { errorText = "Please enter a valid number"; }); return; }
-                if (selectedUnit == "Minutes" && value > 60) { setModalState(() { errorText = "Maximum allowed is 60 minutes"; }); return; }
-                if (selectedUnit == "Hours" && value > 24) { setModalState(() { errorText = "Maximum allowed is 24 hours"; }); return; }
-                if (selectedUnit == "Days" && value > 7) { setModalState(() { errorText = "Maximum allowed is 7 days"; }); return; }
-                Navigator.pop(context);
-                filterByCustomDuration(value, selectedUnit);
-              },
-              child: const Text("Apply"),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -214,7 +166,24 @@ class _NotificationPageState extends State<NotificationPage> {
         foregroundColor: Colors.black87,
         elevation: 2,
         actions: [
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: showFilterOptions, tooltip: "Filter Data"),
+          Builder(
+            builder: (BuildContext innerContext) => IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: () => FilterDialog.show(
+                innerContext,
+                title: "Filter Notifications",
+                quickFilters: [
+                    FilterOption(label: "10 Minutes", onTap: filterLast10Mins),
+                    FilterOption(label: "30 Minutes", onTap: filterLast30Mins),
+                    FilterOption(label: "24 Hours",   onTap: filterLast24Hours),
+                    FilterOption(label: "Yesterday",  onTap: filterYesterday),
+                  ],
+                onReset: resetFilter,
+                onCustomDuration: filterByCustomDuration,
+              ),
+              tooltip: "Filter Data",
+            ),
+          ),
         ],
       ),
       body: RefreshIndicator(

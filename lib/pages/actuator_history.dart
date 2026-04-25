@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/history_service.dart';
+import '../widgets/filter_dialog.dart'; 
 // import 'dart:convert';
 // import 'package:http/http.dart' as http;
 
@@ -29,12 +30,12 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     return null;
   }
 
-  Future<void> fetchData(DateTime since) async {
+  Future<void> fetchData(DateTime since, {DateTime? until}) async {
     setState(() => isLoading = true);
     try {
-      final data = await HistoryService.fetchActuators(since: since); 
+      final data = await HistoryService.fetchActuators(since: since, until: until); 
       setState(() {
-        actuators = data;      
+        actuators = data;       
         isLoading = false;
       });
     } catch (e) {
@@ -96,7 +97,6 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
     return 'N/A';
   }
 
-  // --- Filters ---
   void filterToday() {
     final now = DateTime.now();
     fetchData(DateTime(now.year, now.month, now.day));
@@ -104,7 +104,26 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
 
   void filterYesterday() {
     final now = DateTime.now();
-    fetchData(DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1)));
+    final yesterdayStart = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+    final yesterdayEnd = DateTime(now.year, now.month, now.day); 
+
+    fetchData(yesterdayStart, until: yesterdayEnd);
+  }
+
+  void filterLast30Mins() {
+    final now = DateTime.now();
+    fetchData(now.subtract(const Duration(minutes: 30)));
+  }
+
+  void filterLast10Mins() {
+    final now = DateTime.now();
+    fetchData(now.subtract(const Duration(minutes: 10)));
+  }
+
+  void filterLast24Hours() {
+    final now = DateTime.now();
+    // This is a trailing window: Exactly 24 hours back from 'now'
+    fetchData(now.subtract(const Duration(hours: 24)));
   }
 
   void filterByCustomDuration(int value, String unit) {
@@ -120,74 +139,7 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
 
   void resetFilter() {
     final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    fetchData(today); // reset goes back to today
-  }
-
-  void showFilterOptions() {
-    final TextEditingController controller = TextEditingController();
-    String selectedUnit = "Minutes";
-    String? errorText;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Filter Actuator Data", style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Quick Filters", style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(onPressed: () { Navigator.pop(context); filterToday(); }, child: const Text("Today")),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(onPressed: () { Navigator.pop(context); filterYesterday(); }, child: const Text("Yesterday")),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const Text("Custom Duration", style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: "Enter value", border: const OutlineInputBorder(), errorText: errorText),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedUnit,
-                  items: ["Minutes", "Hours", "Days"].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
-                  onChanged: (value) => setModalState(() => selectedUnit = value!),
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () { Navigator.pop(context); resetFilter(); }, child: const Text("Reset")),
-            ElevatedButton(
-              onPressed: () {
-                final int? value = int.tryParse(controller.text);
-                if (value == null || value <= 0) { setModalState(() { errorText = "Please enter a valid number"; }); return; }
-                if (selectedUnit == "Minutes" && value > 60) { setModalState(() { errorText = "Maximum allowed is 60 minutes"; }); return; }
-                if (selectedUnit == "Hours" && value > 24) { setModalState(() { errorText = "Maximum allowed is 24 hours"; }); return; }
-                if (selectedUnit == "Days" && value > 7) { setModalState(() { errorText = "Maximum allowed is 7 days"; }); return; }
-                Navigator.pop(context);
-                filterByCustomDuration(value, selectedUnit);
-              },
-              child: const Text("Apply"),
-            ),
-          ],
-        ),
-      ),
-    );
+    fetchData(today);
   }
 
   // --- 🧱 UI ---
@@ -200,7 +152,27 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
         foregroundColor: Colors.black87,
         elevation: 2,
         actions: [
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: showFilterOptions, tooltip: "Filter Data"),
+          Builder(
+            builder: (BuildContext innerContext) => IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: () {
+                debugPrint("🔔 Filter button tapped");
+                FilterDialog.show(
+                  innerContext,
+                  title: "Filter Actuator Data",
+                  quickFilters: [
+                    FilterOption(label: "10 Minutes", onTap: filterLast10Mins),
+                    FilterOption(label: "30 Minutes", onTap: filterLast30Mins),
+                    FilterOption(label: "24 Hours",   onTap: filterLast24Hours),
+                    FilterOption(label: "Yesterday",  onTap: filterYesterday),
+                  ],
+                  onReset: resetFilter,
+                  onCustomDuration: filterByCustomDuration,
+                );
+              },
+              tooltip: "Filter Data",
+            ),
+          ),
         ],
       ),
       body: isLoading
