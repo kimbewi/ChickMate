@@ -848,7 +848,7 @@ Future<void> fetchUnreadCount() async {
                 const SizedBox(height: 24),
 
                 Text(
-                  "AI ANALYSIS",
+                  "AI PREDICTION",
                   style: GoogleFonts.inter(
                     fontSize: 18, 
                     fontWeight: FontWeight.w800,
@@ -863,25 +863,28 @@ Future<void> fetchUnreadCount() async {
 
                 // FLOCK STATUS WIDGETS
 
-                Row(
-                      children: [
-                        Expanded(
-                          child: FlockStatusCard(
-                            title: 'Flock Behavior:',
-                            status: flockBehavior,
-                            iconAsset: 'assets/images/flockBehaviorIcon.png',
-                          ),
+                IntrinsicHeight(
+                  child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: FlockStatusCard(
+                                title: 'Flock Behavior:',
+                                status: flockBehavior,
+                                iconAsset: 'assets/images/flockBehaviorIcon.png',
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: FlockStatusCard(
+                                title: 'Flock Sounds:',
+                                status: flockSound,
+                                iconAsset: 'assets/images/flockSoundsIcon.png',
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: FlockStatusCard(
-                            title: 'Flock Sounds:',
-                            status: flockSound,
-                            iconAsset: 'assets/images/flockSoundsIcon.png',
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
 
                 const SizedBox(height: 20),
                 
