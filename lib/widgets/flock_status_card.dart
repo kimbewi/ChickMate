@@ -16,41 +16,56 @@ class FlockStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color statusColor = Colors.grey;
-    String tooltipMsg = 'Waiting for data...';
+    // String tooltipMsg = 'Waiting for data...';
 
     final bool isSoundCard = title.contains("Sounds");
+
+    // final Map<String, Map<String, String>> behaviorMap = {
+    //   'HOT': {
+    //     'label': 'DISPERSED',
+    //     'tooltip': 'Chicks are panting and avoiding the heat source.',
+    //   },
+    //   'NORMAL': {
+    //     'label': 'EVENLY DISTRIBUTED',
+    //     'tooltip': 'Chicks are active and spread out evenly.',
+    //   },
+    //   'COLD': {
+    //     'label': 'HUDDLING',
+    //     'tooltip': 'Chicks are huddling together to stay warm.',
+    //   },
+    // };
 
     final Map<String, Map<String, String>> behaviorMap = {
       'HOT': {
         'label': 'DISPERSED',
-        'tooltip': 'Chicks are panting and avoiding the heat source.',
+        'tooltip': 'Chicks are spread out; possible heat stress.',
       },
       'NORMAL': {
         'label': 'EVENLY DISTRIBUTED',
-        'tooltip': 'Chicks are active and spread out evenly.',
+        'tooltip': 'Chicks are active and evenly distributed; possible optimal condition.',
       },
       'COLD': {
         'label': 'HUDDLING',
-        'tooltip': 'Chicks are huddling together to stay warm.',
+        'tooltip': 'Chicks are grouped closely together; possible cold stress.',
       },
     };
 
     final Map<String, Map<String, String>> soundMap = {
       'HOT': {
-        'label': 'LOW-PITCH',
-        'tooltip': 'Flock is unusually quiet or panting heavily.',
+        'label': 'IRREGULAR',
+        'tooltip': 'Reduced and inconsistent; possible heat stress.',
       },
       'NORMAL': {
         'label': 'MODERATE',
-        'tooltip': 'Calm and normal chirping.',
+        'tooltip': 'Steady and calm; possible optimal condition.',
       },
       'COLD': {
-        'label': 'HIGH-PITCH',
-        'tooltip': 'Loud, high-pitched distress peeps.',
+        'label': 'HIGH-INTENSITY',
+        'tooltip': 'Repetitive and high-pitched; possible cold stress.',
       },
       'REJECTION': {
-        'label': 'UNPREDICTABLE',
-        'tooltip': 'Irregular or abnormal vocalization detected.',
+        'label': 'UNDETECTED',
+        'tooltip': 'No clear chick vocalization detected.',
       },
     };
 
@@ -62,6 +77,7 @@ class FlockStatusCard extends StatelessWidget {
     };
 
     final String displayValue = data['label']!;
+    final String tooltipMsg = data['tooltip']!;
 
     if (status == 'HOT') {
       statusColor = const Color.fromARGB(255, 211, 47, 47);
@@ -70,7 +86,7 @@ class FlockStatusCard extends StatelessWidget {
     } else if (status == 'NORMAL') {
       statusColor = Colors.green;
     } else if (status == 'REJECTION') {
-      statusColor = Colors.orange; 
+      statusColor = Colors.grey; 
     }
 
     return Card(
@@ -131,7 +147,10 @@ class FlockStatusCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                Tooltip(
+                  message: tooltipMsg,
+                  child: const Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                ),
               ],
             ),
           ],
