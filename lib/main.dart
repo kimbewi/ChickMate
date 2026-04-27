@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'pages/onboarding_screen.dart';
 import 'firebase_options.dart';
 import 'pages/home_page.dart';
 
@@ -47,17 +49,22 @@ void main() async {
   const InitializationSettings initializationSettings =
       InitializationSettings(android: initializationSettingsAndroid);
 
+  final prefs = await SharedPreferences.getInstance();
+  final bool showOnboarding = prefs.getBool('show_onboarding') ?? true;
+
+  // Pass the boolean into your app
+  runApp(MyApp(showOnboarding: showOnboarding));
+
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   tz.initializeTimeZones(); 
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool showOnboarding; 
+  const MyApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +74,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
-      home: const MyHomePage(title: 'ChickMate'),
+      // TEMPORARY OVERRIDE FOR DEVELOPMENT:
+      // Comment out the logic and force the OnboardingScreen
+      home: const OnboardingScreen(),
+      // home: showOnboarding 
+      //     ? const OnboardingScreen() 
+      //     : const MyHomePage(title: 'ChickMate'),
     );
   }
 }
