@@ -76,10 +76,10 @@ class MyApp extends StatelessWidget {
       ),
       // TEMPORARY OVERRIDE FOR DEVELOPMENT:
       // Comment out the logic and force the OnboardingScreen
-      home: const OnboardingScreen(),
-      // home: showOnboarding 
-      //     ? const OnboardingScreen() 
-      //     : const MyHomePage(title: 'ChickMate'),
+      // home: const OnboardingScreen(),
+      home: showOnboarding 
+          ? const OnboardingScreen() 
+          : const MyHomePage(title: 'ChickMate'),
     );
   }
 }
