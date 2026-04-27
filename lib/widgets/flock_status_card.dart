@@ -38,7 +38,7 @@ class FlockStatusCard extends StatelessWidget {
     final Map<String, Map<String, String>> behaviorMap = {
       'HOT': {
         'label': 'DISPERSED',
-        'tooltip': 'Chicks are spread out; possible heat stress.',
+        'tooltip': 'Chicks are spread out or lethargic; possible heat stress.',
       },
       'NORMAL': {
         'label': 'EVENLY DISTRIBUTED',

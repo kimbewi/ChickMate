@@ -11,7 +11,7 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -32,6 +32,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "image": "assets/images/onboarding-3.png", 
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _currentPage == onboardingData.length - 1) {
+      _completeOnboarding();
+    }
+  }
 
   Future<void> _launchTailscale() async {
     const url = 'https://login.tailscale.com/admin/invite/DYKcAAWNYqXLDcN7MSeU11';
