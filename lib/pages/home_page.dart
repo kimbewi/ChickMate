@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import '../widgets/live_clock.dart';
 import '../widgets/status_card.dart';
 import '../widgets/control_card.dart';
+import '../widgets/video_troubleshoot_modal.dart';
 import 'sensor_history.dart';
 import 'actuator_history.dart';
 import 'notification_page.dart';
@@ -773,16 +774,33 @@ Future<void> fetchUnreadCount() async {
               ),
               
               const SizedBox(height: 24),
-                Text("VIDEO FEED",
+                Row(
+                key: _videoKey, 
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    "VIDEO FEED",
                     style: GoogleFonts.inter(
-                        fontSize: 20, fontWeight: FontWeight.w800, height: 1.0),
-                        key: _videoKey,
-                        textHeightBehavior: 
-                        const TextHeightBehavior(
-                          applyHeightToFirstAscent: false, 
-                          applyHeightToLastDescent: false, 
-                        ),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
                     ),
+                    textHeightBehavior: const TextHeightBehavior(
+                      applyHeightToFirstAscent: false,
+                      applyHeightToLastDescent: false,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => showVideoTroubleshootModal(context),
+                    child: Icon(
+                      Icons.help_outline,
+                      color: Colors.grey.shade500,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
                 const SizedBox(height: 12),
                 Card(
                 color: Colors.white,
