@@ -597,7 +597,7 @@ Future<void> fetchUnreadCount() async {
                               message: "Select if you want the brooder to run\non its own or if you want to control it.",
                               textAlign: TextAlign.center,
                               triggerMode: TooltipTriggerMode.tap,
-                              showDuration: const Duration(seconds: 3),
+                              showDuration: const Duration(seconds: 5),
                               preferBelow: true,
                               verticalOffset: 12,
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
