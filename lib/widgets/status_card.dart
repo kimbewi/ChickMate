@@ -19,8 +19,8 @@ class StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isNumeric = double.tryParse(data) != null;
-
+    double? parsedValue = double.tryParse(data);
+    bool isNumeric = parsedValue != null && !parsedValue.isNaN;
     bool isError = !isNumeric && data != '--';
 
     // for units formatting

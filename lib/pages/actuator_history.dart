@@ -70,6 +70,8 @@ class _ActuatorHistoryPageState extends State<ActuatorHistoryPage> {
         return 'Exhaust/Intake Fan';
       case 'heater':
         return 'Heater';
+      case 'manualOverride':
+        return 'Manual Override';
       default:
         return actuatorId ?? 'Unknown';
     }
