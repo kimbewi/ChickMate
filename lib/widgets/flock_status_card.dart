@@ -16,25 +16,77 @@ class FlockStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color statusColor = Colors.grey;
-    String tooltipMsg = 'Waiting for data...';
+    // String tooltipMsg = 'Waiting for data...';
 
-    bool isSoundCard = title.contains("Sounds");
+    final bool isSoundCard = title.contains("Sounds");
+
+    // final Map<String, Map<String, String>> behaviorMap = {
+    //   'HOT': {
+    //     'label': 'DISPERSED',
+    //     'tooltip': 'Chicks are panting and avoiding the heat source.',
+    //   },
+    //   'NORMAL': {
+    //     'label': 'EVENLY DISTRIBUTED',
+    //     'tooltip': 'Chicks are active and spread out evenly.',
+    //   },
+    //   'COLD': {
+    //     'label': 'HUDDLING',
+    //     'tooltip': 'Chicks are huddling together to stay warm.',
+    //   },
+    // };
+
+    final Map<String, Map<String, String>> behaviorMap = {
+      'HOT': {
+        'label': 'DISPERSED',
+        'tooltip': 'Chicks are spread out or lethargic; possible heat stress.',
+      },
+      'NORMAL': {
+        'label': 'EVENLY DISTRIBUTED',
+        'tooltip': 'Chicks are active and evenly distributed; possible optimal condition.',
+      },
+      'COLD': {
+        'label': 'HUDDLING',
+        'tooltip': 'Chicks are grouped closely together; possible cold stress.',
+      },
+    };
+
+    final Map<String, Map<String, String>> soundMap = {
+      'HOT': {
+        'label': 'IRREGULAR',
+        'tooltip': 'Reduced and inconsistent; possible heat stress.',
+      },
+      'NORMAL': {
+        'label': 'MODERATE',
+        'tooltip': 'Steady and calm; possible optimal condition.',
+      },
+      'COLD': {
+        'label': 'HIGH-INTENSITY',
+        'tooltip': 'Repetitive and high-pitched; possible cold stress.',
+      },
+      'REJECTION': {
+        'label': 'UNDETECTED',
+        'tooltip': 'No clear chick vocalization detected.',
+      },
+    };
+
+    final selectedMap = isSoundCard ? soundMap : behaviorMap;
+
+    final data = selectedMap[status] ?? {
+      'label': 'UNKNOWN',
+      'tooltip': 'No data available.',
+    };
+
+    final String displayValue = data['label']!;
+    final String tooltipMsg = data['tooltip']!;
 
     if (status == 'HOT') {
-      statusColor = const Color.fromARGB(255, 211, 47, 47);;
-      tooltipMsg = isSoundCard
-          ? 'Flock is unusually quiet or panting heavily.'
-          : 'Chicks are panting and avoiding the heat source.';
+      statusColor = const Color.fromARGB(255, 211, 47, 47);
     } else if (status == 'COLD') {
       statusColor = Colors.blueAccent;
-      tooltipMsg = isSoundCard
-          ? 'Loud, high-pitched distress peeps.'
-          : 'Chicks are huddling together to stay warm.';
     } else if (status == 'NORMAL') {
       statusColor = Colors.green;
-      tooltipMsg = isSoundCard
-          ? 'Calm and normal chirping.'
-          : 'Chicks are active and spread out evenly.';
+    } else if (status == 'REJECTION') {
+      statusColor = Colors.grey; 
     }
 
     return Card(
@@ -80,37 +132,40 @@ class FlockStatusCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  status,
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: statusColor,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown, 
+                    alignment: Alignment.centerLeft, 
+                    child: Text(
+                      displayValue,
+                      style: GoogleFonts.inter(
+                        fontSize: 22, 
+                        fontWeight: FontWeight.w800,
+                        color: statusColor,
+                      ),
+                      maxLines: 1, 
+                    ),
                   ),
                 ),
+
                 const SizedBox(width: 8),
+
                 Tooltip(
                   message: tooltipMsg,
                   textAlign: TextAlign.center,
                   triggerMode: TooltipTriggerMode.tap,
-                  showDuration: const Duration(seconds: 3),
+                  showDuration: const Duration(seconds: 5),
                   preferBelow: true,
                   verticalOffset: 12,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade700.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(8), 
-                  ),
-                  
+                    borderRadius: BorderRadius.circular(8),),
                   textStyle: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 12,
                   ),
-                  child: Icon(
-                    Icons.help_outline,
-                    size: 16,
-                    color: Colors.grey.shade400,
-                  ),
+                  child: const Icon(Icons.info_outline, size: 16, color: Colors.grey),
                 ),
               ],
             ),

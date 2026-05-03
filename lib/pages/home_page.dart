@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../widgets/live_clock.dart';
 import '../widgets/status_card.dart';
 import '../widgets/control_card.dart';
+import '../widgets/video_troubleshoot_modal.dart';
 import 'sensor_history.dart';
 import 'actuator_history.dart';
 import 'notification_page.dart';
@@ -54,14 +56,14 @@ class _MyHomePageState extends State<MyHomePage> {
   RTCPeerConnection? _pc;
   IOWebSocketChannel? _channel;
 
-  late DatabaseReference _sensorDataRef; 
+  late DatabaseReference _sensorDataRef;
   late DatabaseReference _controlsRef;
-  late DatabaseReference _flockStatusRef; 
-  StreamSubscription? _flockStatusSubscription; 
+  late DatabaseReference _flockStatusRef;
+  StreamSubscription? _flockStatusSubscription;
   StreamSubscription? _sensorDataSubscription;
   StreamSubscription? _controlsSubscription;
 
-  bool isManualMode = false; 
+  bool isManualMode = false;
 
   bool isViewingNotifications = false;
   int unreadCount = 0;
@@ -98,9 +100,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _toggleMode(bool value) {
-  setState(() {
-    isManualMode = value;
-  });
+    setState(() {
+      isManualMode = value;
+    });
 
     _controlsRef.child('manualOverride').set(value);
   }
@@ -118,7 +120,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _showDropdown() {
     final overlay = Overlay.of(context)!;
-    final renderBox = _dropdownKey.currentContext!.findRenderObject() as RenderBox;
+    final renderBox =
+        _dropdownKey.currentContext!.findRenderObject() as RenderBox;
     final size = renderBox.size;
 
     setState(() {
@@ -155,7 +158,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             },
                             child: Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
                               color: selectedWeek == week
                                   ? Colors.grey.shade100
                                   : Colors.transparent,
@@ -232,17 +238,17 @@ class _MyHomePageState extends State<MyHomePage> {
               'High Importance Notifications', // name
               importance: Importance.high,
               priority: Priority.high,
-              icon: 'app_logo'
+              icon: 'app_logo',
             ),
           ),
         );
       }
     });
 
-     _notificationTimer = Timer.periodic(
-        const Duration(seconds: 5),
-        (_) => fetchUnreadCount(),
-      );
+    _notificationTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => fetchUnreadCount(),
+    );
 
     // Point the reference to the "node" or "path" in your database
     _sensorDataRef = FirebaseDatabase.instance.ref('sensorData');
@@ -287,37 +293,33 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-Future<void> setupFCM() async {
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  Future<void> setupFCM() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-  // Ask permission
-  await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+    // Ask permission
+    await messaging.requestPermission(alert: true, badge: true, sound: true);
 
-  // Get device token
-  String? token = await messaging.getToken();
-  print("🔥 DEVICE TOKEN: $token");
+    // Get device token
+    String? token = await messaging.getToken();
+    print("🔥 DEVICE TOKEN: $token");
 
-  if (token != null) {
-    await HistoryService.saveDeviceToken(token);
+    if (token != null) {
+      await HistoryService.saveDeviceToken(token);
+    }
   }
-}
 
-Future<void> fetchUnreadCount() async {
-  if (!mounted || isViewingNotifications) return;
+  Future<void> fetchUnreadCount() async {
+    if (!mounted || isViewingNotifications) return;
 
-  try {
-    final count = await HistoryService.fetchUnreadCount();
-    setState(() {
-      unreadCount = count;
-    });
-  } catch (e) {
-    debugPrint("❌ Failed to fetch unread count: $e");
+    try {
+      final count = await HistoryService.fetchUnreadCount();
+      setState(() {
+        unreadCount = count;
+      });
+    } catch (e) {
+      debugPrint("❌ Failed to fetch unread count: $e");
+    }
   }
-}
 
   Future<void> _disconnect() async {
     _remoteRenderer.srcObject = null;
@@ -333,7 +335,7 @@ Future<void> fetchUnreadCount() async {
       setState(() {});
     }
   }
-   
+
   Future<void> _handleRefresh() async {
     await _disconnect();
     await Future.delayed(const Duration(milliseconds: 500));
@@ -347,37 +349,37 @@ Future<void> fetchUnreadCount() async {
   }
 
   void _onScroll() {
-  // If scrolled to the bottom, always highlight Controls
-  if (_scrollController.position.pixels >= 
-      _scrollController.position.maxScrollExtent - 80) {
-    if (_activeIndex != 3) setState(() => _activeIndex = 3);
-    return;
-  }
+    // If scrolled to the bottom, always highlight Controls
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 80) {
+      if (_activeIndex != 3) setState(() => _activeIndex = 3);
+      return;
+    }
 
-  final sections = [
-    (_configKey, 0),
-    (_videoKey, 1),
-    (_envKey, 2),
-    (_controlsKey, 3),
-  ];
+    final sections = [
+      (_configKey, 0),
+      (_videoKey, 1),
+      (_envKey, 2),
+      (_controlsKey, 3),
+    ];
 
-  for (int i = sections.length - 1; i >= 0; i--) {
-    final key = sections[i].$1;
-    final index = sections[i].$2;
-    final context = key.currentContext;
-    if (context == null) continue;
+    for (int i = sections.length - 1; i >= 0; i--) {
+      final key = sections[i].$1;
+      final index = sections[i].$2;
+      final context = key.currentContext;
+      if (context == null) continue;
 
-    final box = context.findRenderObject() as RenderBox;
-    final position = box.localToGlobal(Offset.zero);
+      final box = context.findRenderObject() as RenderBox;
+      final position = box.localToGlobal(Offset.zero);
 
-    if (position.dy <= 120) {
-      if (_activeIndex != index) {
-        setState(() => _activeIndex = index);
+      if (position.dy <= 120) {
+        if (_activeIndex != index) {
+          setState(() => _activeIndex = index);
+        }
+        break;
       }
-      break;
     }
   }
-}
 
   Future<void> _connect() async {
     await _remoteRenderer.initialize();
@@ -396,25 +398,66 @@ Future<void> fetchUnreadCount() async {
       }
     };
 
-    // Connect to signaling server
-    _channel = IOWebSocketChannel.connect(
-      'ws://100.68.113.75:8765',
-    ); // replace with tailscale ip x.x.x.x:8765
-
-    _channel!.stream.listen((message) async {
-      final data = json.decode(message);
-      if (data['type'] == 'answer') {
-        await _pc!.setRemoteDescription(
-          RTCSessionDescription(data['sdp'], 'answer'),
-        );
+    // 1. GET THE LATEST LOCAL IP FROM FIREBASE
+    String currentLocalIp = '192.168.8.95'; // Default fallback just in case
+    try {
+      final snapshot = await FirebaseDatabase.instance
+          .ref('network/localIp')
+          .get();
+      if (snapshot.exists) {
+        currentLocalIp = snapshot.value.toString();
+        debugPrint("Fetched Pi IP from Firebase: $currentLocalIp");
       }
-    });
+    } catch (e) {
+      debugPrint("Failed to fetch IP from Firebase: $e");
+    }
 
-    // Create and send offer
-    RTCSessionDescription offer = await _pc!.createOffer();
-    await _pc!.setLocalDescription(offer);
+    // 2. DEFINE THE TWO CONNECTION PATHS
+    final tailscaleIp = 'ws://100.68.113.75:8765';
+    final localIp = 'ws://$currentLocalIp:8765';
 
-    _channel!.sink.add(json.encode({'type': 'offer', 'sdp': offer.sdp}));
+    WebSocket? rawSocket;
+
+    // 3. SCENARIO A: Try Tailscale First (3-second timeout)
+    try {
+      debugPrint("Attempting Tailscale Connection...");
+      rawSocket = await WebSocket.connect(
+        tailscaleIp,
+      ).timeout(const Duration(seconds: 3));
+      debugPrint("✅ Connected via Tailscale!");
+    } catch (e) {
+      debugPrint("Tailscale failed. Switching to Local Wi-Fi...");
+
+      // 4. SCENARIO B: Try Local Wi-Fi (3-second timeout)
+      try {
+        rawSocket = await WebSocket.connect(
+          localIp,
+        ).timeout(const Duration(seconds: 3));
+        debugPrint("✅ Connected via Local Wi-Fi!");
+      } catch (e) {
+        debugPrint("❌ Both connections failed: $e");
+        return; // Stop here if neither connects
+      }
+    }
+
+    // 5. ATTACH THE SUCCESSFUL CONNECTION
+    if (rawSocket != null) {
+      _channel = IOWebSocketChannel(rawSocket);
+      _channel!.stream.listen((message) async {
+        final data = json.decode(message);
+        if (data['type'] == 'answer') {
+          await _pc!.setRemoteDescription(
+            RTCSessionDescription(data['sdp'], 'answer'),
+          );
+        }
+      });
+
+      // Create and send offer
+      RTCSessionDescription offer = await _pc!.createOffer();
+      await _pc!.setLocalDescription(offer);
+
+      _channel!.sink.add(json.encode({'type': 'offer', 'sdp': offer.sdp}));
+    }
   }
 
   @override
@@ -437,7 +480,7 @@ Future<void> fetchUnreadCount() async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(60), 
+        preferredSize: Size.fromHeight(60),
         child: AppBar(
           backgroundColor: const Color.fromRGBO(249, 250, 251, 1.0),
           automaticallyImplyLeading: false,
@@ -465,705 +508,822 @@ Future<void> fetchUnreadCount() async {
           ),
           actions: [
             SizedBox(
-            width: 48, // typical IconButton size
-            height: 48,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_none_outlined,
-                    color: Color.fromRGBO(32, 32, 32, 1.0),
+              width: 48, // typical IconButton size
+              height: 48,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.notifications_none_outlined,
+                      color: Color.fromRGBO(32, 32, 32, 1.0),
+                    ),
+                    tooltip: 'Notifications',
+                    onPressed: () async {
+                      setState(() {
+                        isViewingNotifications = true;
+                        unreadCount = 0;
+                      });
+
+                      await HistoryService.markAllNotificationsRead();
+
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationPage(),
+                        ),
+                      );
+
+                      setState(() {
+                        isViewingNotifications = false;
+                      });
+                    },
                   ),
-                  tooltip: 'Notifications',
-                  onPressed: () async {
-                    setState(() {
-                      isViewingNotifications = true;
-                      unreadCount = 0;
-          });
-
-          await HistoryService.markAllNotificationsRead();
-
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotificationPage()),
-          );
-
-          setState(() {
-            isViewingNotifications = false;
-          });
-        },
-      ),
-            if (unreadCount > 0)
-              Positioned(
-                right: 6,
-                top: 6,
-                child: IgnorePointer(  // <-- prevent blocking taps
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      '$unreadCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: IgnorePointer(
+                        // <-- prevent blocking taps
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ),
+                ],
               ),
+            ),
           ],
-        ),
-      ),
-          ]
         ),
       ),
 
       body: Stack(
-      children:[
-      Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromRGBO(249, 250, 251, 1.0),
-              Color.fromRGBO(249, 250, 251, 1.0)
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: RefreshIndicator(
-            onRefresh: _handleRefresh, 
-            color: Colors.orange,    
-            
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              // -- configuration section --
-              Text(
-                key: _configKey,
-                "SYSTEM MODE",
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: const Color.fromRGBO(30, 30, 30, 1.0),
-                  height: 1.0,
-                ),
-                textHeightBehavior: 
-                const TextHeightBehavior(
-                  applyHeightToFirstAscent: false, 
-                  applyHeightToLastDescent: false, 
-                ),
-              ),
-              
-              const SizedBox(height: 12),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start, // Aligns the bottoms of the containers (configuration section)
-                children: [
-                  // -- SYSTEM MODE -- 
-                  Expanded(
-                    flex: 20, // flexible width
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              "Select System Mode:",
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                color: const Color.fromRGBO(30, 30, 30, 1.0),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Tooltip(
-                              message: "Select if you want the brooder to run\non its own or if you want to control it.",
-                              textAlign: TextAlign.center,
-                              triggerMode: TooltipTriggerMode.tap,
-                              showDuration: const Duration(seconds: 3),
-                              preferBelow: true,
-                              verticalOffset: 12,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade700.withValues(alpha: 0.8),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              
-                              textStyle: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                              child: const Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),                        const SizedBox(height: 4), // margin between "system mode" and toggle
-                        Container(
-                          height: 48,
-                          padding: const EdgeInsets.all(1), //border-like padding
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200, // Light gray background for the toggle area
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              // Automatic Button
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => _toggleMode(false),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: !isManualMode ? const Color(0xFF4A85F6) : Colors.transparent, // Blue when active
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.auto_awesome_outlined,
-                                          size: 18,
-                                          color: !isManualMode ? Colors.white : Colors.grey.shade700,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "Automatic",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 13,
-                                            fontWeight: !isManualMode ? FontWeight.w600 : FontWeight.w400,
-                                            color: !isManualMode ? Colors.white : Colors.grey.shade700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              // Manual Button
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => _toggleMode(true),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: isManualMode ? const Color(0xFF4A85F6) : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.pan_tool_outlined,
-                                          size: 18,
-                                          color: isManualMode ? Colors.white : Colors.grey.shade700,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "Manual",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 13,
-                                            fontWeight: isManualMode ? FontWeight.w600 : FontWeight.w400,
-                                            color: isManualMode ? Colors.white : Colors.grey.shade700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 16), // margin between system mode and chick age
-
-                  // CHICK AGE 
-                  Expanded(
-                    flex: 12,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Chicks' Age:",
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: const Color.fromRGBO(30, 30, 30, 1.0),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        CompositedTransformTarget(
-                          link: _dropdownLink,
-                          child: TapRegion(
-                            groupId: 'chickDropdown',
-                            child: InkWell(
-                              key: _dropdownKey,
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () {
-                                if (_dropdownOverlay == null) {
-                                  _showDropdown();
-                                } else {
-                                  _removeDropdown();
-                                }
-                              },
-                              child: Container(
-                                height: 48, // Matches height of the toggle
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white, // White background for dropdown
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade200),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.calendar_today_outlined,
-                                      size: 18,
-                                      color: Color.fromRGBO(50, 50, 50, 1.0),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        "Week $selectedWeek",
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                          color: const Color.fromRGBO(32, 32, 32, 1.0),
-                                        ),
-                                      ),
-                                    ),
-                                    Icon(
-                                      _dropdownOverlay != null
-                                          ? Icons.keyboard_arrow_up_rounded
-                                          : Icons.keyboard_arrow_down_rounded,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color.fromRGBO(249, 250, 251, 1.0),
+                  Color.fromRGBO(249, 250, 251, 1.0),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              
-              const SizedBox(height: 24),
-                Text("VIDEO FEED",
-                    style: GoogleFonts.inter(
-                        fontSize: 20, fontWeight: FontWeight.w800, height: 1.0),
-                        key: _videoKey,
-                        textHeightBehavior: 
-                        const TextHeightBehavior(
-                          applyHeightToFirstAscent: false, 
-                          applyHeightToLastDescent: false, 
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: RefreshIndicator(
+                onRefresh: _handleRefresh,
+                color: Colors.orange,
+
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // -- configuration section --
+                      Text(
+                        key: _configKey,
+                        "SYSTEM MODE",
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: const Color.fromRGBO(30, 30, 30, 1.0),
+                          height: 1.0,
                         ),
-                    ),
-                const SizedBox(height: 12),
-                Card(
-                color: Colors.white,
-                elevation: 1,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(19),
-                  child: Container(
-                    height: 300,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    // WE USE A STACK TO OVERLAY THE BUTTON
-                    child: Stack(
-                      children: [
-                        // 1. The Video Player
-                        Positioned.fill(
-                          child: RTCVideoView(
-                            _remoteRenderer,
-                            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
-                            mirror: false,
-                          ),
+                        textHeightBehavior: const TextHeightBehavior(
+                          applyHeightToFirstAscent: false,
+                          applyHeightToLastDescent: false,
                         ),
-                        
-                        // 2. The Full Screen Button (Bottom Right)
-                        Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5), // Semi-transparent background
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.fullscreen, color: Colors.white),
-                              tooltip: "Full Screen",
-                              onPressed: () {
-                                // Navigate to the full screen page
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FullScreenVideoPage(
-                                      renderer: _remoteRenderer,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-// --- END OF UPDATED CARD ---
+                      ),
 
-                const SizedBox(height: 24),
+                      const SizedBox(height: 12),
 
-                Text(
-                  "AI ANALYSIS",
-                  style: GoogleFonts.inter(
-                    fontSize: 18, 
-                    fontWeight: FontWeight.w800,
-                    height: 1.0,
-                  ),
-                  textHeightBehavior: const TextHeightBehavior(
-                      applyHeightToFirstAscent: false, 
-                      applyHeightToLastDescent: false, 
-                    ),
-                ),
-                const SizedBox(height: 12),
-
-                // FLOCK STATUS WIDGETS
-
-                Row(
-                      children: [
-                        Expanded(
-                          child: FlockStatusCard(
-                            title: 'Flock Behavior:',
-                            status: flockBehavior,
-                            iconAsset: 'assets/images/flockBehaviorIcon.png',
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: FlockStatusCard(
-                            title: 'Flock Sounds:',
-                            status: flockSound,
-                            iconAsset: 'assets/images/flockSoundsIcon.png',
-                          ),
-                        ),
-                      ],
-                    ),
-
-                const SizedBox(height: 20),
-                
-                // -- environmental status section --
-                Row(
-                key: _envKey,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text(
-                    'ENVIRONMENTAL STATUS',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      height: 1.0, // removing extra space in text's height
-                    ),
-                    // removing extra space in text's height
-                    textHeightBehavior: const TextHeightBehavior(
-                      applyHeightToFirstAscent: false, 
-                      applyHeightToLastDescent: false, 
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.history, color: Color.fromRGBO(146, 138, 138, 1.0)),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SensorHistoryPage()),
-                      );
-                    },
-                  ),
-                ],
-              ),
-
-                const SizedBox(height: 12),
-
-                // -- environmental status widgets --
-                Column(
-                  children: [
-                    IntrinsicHeight(
-                      child:
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment
+                            .start, // Aligns the bottoms of the containers (configuration section)
                         children: [
+                          // -- SYSTEM MODE --
                           Expanded(
-                            child: StatusCard(
-                              title: 'Ammonia Level',
-                              data: ammoniaLevel,
-                              unit: 'ppm',
-                              icon: Icons.dangerous_outlined,
-                              iconColor: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: StatusCard(
-                              title: 'Temperature',
-                              data: temperature,
-                              unit: '°C',
-                              icon: Icons.thermostat,
-                              iconColor: Colors.redAccent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16), 
-
-                    IntrinsicHeight(
-                      child:
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: StatusCard(
-                              title: 'Humidity',
-                              data: humidity,
-                              unit: '%',
-                              icon: Icons.water_drop_outlined,
-                              iconColor: Colors.blueAccent,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: StatusCard(
-                              title: 'Light Level',
-                              data: lightLevel,
-                              unit: 'lux',
-                              icon: Icons.wb_sunny_outlined,
-                              iconColor: Colors.yellowAccent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-                
-                // -- controls section --
-                Row(
-                key: _controlsKey,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text(
-                    'CONTROLS',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      height: 1.0,
-                    ),
-                    textHeightBehavior: const TextHeightBehavior(
-                      applyHeightToFirstAscent: false, 
-                      applyHeightToLastDescent: false, 
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.history, color: Color.fromRGBO(146, 138, 138, 1.0)),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ActuatorHistoryPage()),
-                      );
-                    },
-                  ),
-                ],
-              ),
-
-                SizedBox(height: isManualMode ? 12.0 : 4.0),
-
-                // -- controls widgets --
-
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isManualMode ? const Color(0xFFE8F5E9) : const Color(0xFFE8F0FE),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isManualMode ? const Color(0xFF66BB6A) : const Color(0xFF8AB4F8),
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start, // align icon to top
-                      children: [
-                        Icon(
-                          isManualMode ? Icons.recommend_outlined : Icons.auto_awesome,
-                          color: isManualMode ? const Color(0xFF2E7D32) : const Color(0xFF1967D2),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: isManualMode
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                            flex: 20, // flexible width
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
                                     Text(
-                                      "AI RECOMMENDED ACTION",
-                                      style: GoogleFonts.inter(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF2E7D32),
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      flockInterpretation,
+                                      "Select System Mode:",
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF2E7D32),
-                                        height: 1.3,
+                                        fontWeight: FontWeight.w400,
+                                        color: const Color.fromRGBO(
+                                          30,
+                                          30,
+                                          30,
+                                          1.0,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Tooltip(
+                                      message:
+                                          "Select if you want the brooder to run\non its own or if you want to control it.",
+                                      textAlign: TextAlign.center,
+                                      triggerMode: TooltipTriggerMode.tap,
+                                      showDuration: const Duration(seconds: 5),
+                                      preferBelow: true,
+                                      verticalOffset: 12,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade700.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+
+                                      textStyle: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                      child: const Icon(
+                                        Icons.info_outline,
+                                        size: 16,
+                                        color: Colors.grey,
                                       ),
                                     ),
                                   ],
-                                )
-                              : Text(
-                                  "Controls are locked while in Automatic Mode. Switch to Manual to take over.",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF1967D2),
-                                    height: 1.3,
-                                  ),
                                 ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                IgnorePointer(
-                  ignoring: !isManualMode, 
-                  child: Opacity(
-                    opacity: isManualMode ? 1.0 : 0.4,
-                    child:
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                child:
-                                  ControlCard(
-                                    title: 'Fans',
-                                    icon: Icons.air_outlined,
-                                    isOn: isFansOn,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        isFansOn = value;
-                                      });
-                                      _updateControl('fans', value);
-                                    },
+                                const SizedBox(
+                                  height: 4,
+                                ), // margin between "system mode" and toggle
+                                Container(
+                                  height: 48,
+                                  padding: const EdgeInsets.all(
+                                    1,
+                                  ), //border-like padding
+                                  decoration: BoxDecoration(
+                                    color: Colors
+                                        .grey
+                                        .shade200, // Light gray background for the toggle area
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                              ),
-
-                              const SizedBox(width: 16),
-
-                              Expanded(
-                                child:
-                                ControlCard(
-                                  title: 'Heater',
-                                  icon: Icons.whatshot_outlined,
-                                  isOn: isHeaterOn,
-                                  onChanged: (value) {
-                                    setState(() => isHeaterOn = value);
-                                    _updateControl('heater', value);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                              
-                              const SizedBox(height: 12),
-
-                              SliderControlCard(
-                                  title: 'Light Bulb',
-                                  icon: Icons.lightbulb_outline,
-                                  value: lightBrightness,
-                                  onChanged: (newValue) {
-                                    setState(() {
-                                      lightBrightness = newValue;
-                                    });
-                                  },
-                                    onChangeEnd: (newValue) {
-                                      _updateControl('lightBrightness', newValue.round());
-                                  },
+                                  child: Row(
+                                    children: [
+                                      // Automatic Button
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => _toggleMode(false),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: !isManualMode
+                                                  ? const Color(0xFF4A85F6)
+                                                  : Colors
+                                                        .transparent, // Blue when active
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.auto_awesome_outlined,
+                                                  size: 18,
+                                                  color: !isManualMode
+                                                      ? Colors.white
+                                                      : Colors.grey.shade700,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  "Automatic",
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    fontWeight: !isManualMode
+                                                        ? FontWeight.w600
+                                                        : FontWeight.w400,
+                                                    color: !isManualMode
+                                                        ? Colors.white
+                                                        : Colors.grey.shade700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Manual Button
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => _toggleMode(true),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: isManualMode
+                                                  ? const Color(0xFF4A85F6)
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.pan_tool_outlined,
+                                                  size: 18,
+                                                  color: isManualMode
+                                                      ? Colors.white
+                                                      : Colors.grey.shade700,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  "Manual",
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    fontWeight: isManualMode
+                                                        ? FontWeight.w600
+                                                        : FontWeight.w400,
+                                                    color: isManualMode
+                                                        ? Colors.white
+                                                        : Colors.grey.shade700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                    ),
-                const SizedBox(height: 90),
-              ],             
+
+                          const SizedBox(
+                            width: 16,
+                          ), // margin between system mode and chick age
+                          // CHICK AGE
+                          Expanded(
+                            flex: 12,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Chicks' Age:",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: const Color.fromRGBO(
+                                      30,
+                                      30,
+                                      30,
+                                      1.0,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                CompositedTransformTarget(
+                                  link: _dropdownLink,
+                                  child: TapRegion(
+                                    groupId: 'chickDropdown',
+                                    child: InkWell(
+                                      key: _dropdownKey,
+                                      borderRadius: BorderRadius.circular(12),
+                                      onTap: () {
+                                        if (_dropdownOverlay == null) {
+                                          _showDropdown();
+                                        } else {
+                                          _removeDropdown();
+                                        }
+                                      },
+                                      child: Container(
+                                        height:
+                                            48, // Matches height of the toggle
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors
+                                              .white, // White background for dropdown
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey.shade200,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.calendar_today_outlined,
+                                              size: 18,
+                                              color: Color.fromRGBO(
+                                                50,
+                                                50,
+                                                50,
+                                                1.0,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                "Week $selectedWeek",
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: const Color.fromRGBO(
+                                                    32,
+                                                    32,
+                                                    32,
+                                                    1.0,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              _dropdownOverlay != null
+                                                  ? Icons
+                                                        .keyboard_arrow_up_rounded
+                                                  : Icons
+                                                        .keyboard_arrow_down_rounded,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+                      Row(
+                        key: _videoKey,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            "VIDEO FEED",
+                            style: GoogleFonts.inter(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              height: 1.0,
+                            ),
+                            textHeightBehavior: const TextHeightBehavior(
+                              applyHeightToFirstAscent: false,
+                              applyHeightToLastDescent: false,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => showVideoTroubleshootModal(context),
+                            child: Icon(
+                              Icons.help_outline,
+                              color: Colors.grey.shade500,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Card(
+                        color: Colors.white,
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(19),
+                          child: Container(
+                            height: 300,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            // WE USE A STACK TO OVERLAY THE BUTTON
+                            child: Stack(
+                              children: [
+                                // 1. The Video Player
+                                Positioned.fill(
+                                  child: RTCVideoView(
+                                    _remoteRenderer,
+                                    objectFit: RTCVideoViewObjectFit
+                                        .RTCVideoViewObjectFitContain,
+                                    mirror: false,
+                                  ),
+                                ),
+
+                                // 2. The Full Screen Button (Bottom Right)
+                                Positioned(
+                                  bottom: 8,
+                                  right: 8,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(
+                                        0.5,
+                                      ), // Semi-transparent background
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.fullscreen,
+                                        color: Colors.white,
+                                      ),
+                                      tooltip: "Full Screen",
+                                      onPressed: () {
+                                        // Navigate to the full screen page
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                FullScreenVideoPage(
+                                                  renderer: _remoteRenderer,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // --- END OF UPDATED CARD ---
+                      const SizedBox(height: 24),
+
+                      Text(
+                        "AI PREDICTION",
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          height: 1.0,
+                        ),
+                        textHeightBehavior: const TextHeightBehavior(
+                          applyHeightToFirstAscent: false,
+                          applyHeightToLastDescent: false,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // FLOCK STATUS WIDGETS
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: FlockStatusCard(
+                                title: 'Flock Behavior:',
+                                status: flockBehavior,
+                                iconAsset:
+                                    'assets/images/flockBehaviorIcon.png',
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: FlockStatusCard(
+                                title: 'Flock Sounds:',
+                                status: flockSound,
+                                iconAsset: 'assets/images/flockSoundsIcon.png',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // -- environmental status section --
+                      Row(
+                        key: _envKey,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ENVIRONMENTAL STATUS',
+                            style: GoogleFonts.inter(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              height:
+                                  1.0, // removing extra space in text's height
+                            ),
+                            // removing extra space in text's height
+                            textHeightBehavior: const TextHeightBehavior(
+                              applyHeightToFirstAscent: false,
+                              applyHeightToLastDescent: false,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.history,
+                              color: Color.fromRGBO(146, 138, 138, 1.0),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SensorHistoryPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // -- environmental status widgets --
+                      Column(
+                        children: [
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: StatusCard(
+                                    title: 'Ammonia Level',
+                                    data: ammoniaLevel,
+                                    unit: 'ppm',
+                                    icon: Icons.dangerous_outlined,
+                                    iconColor: Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: StatusCard(
+                                    title: 'Temperature',
+                                    data: temperature,
+                                    unit: '°C',
+                                    icon: Icons.thermostat,
+                                    iconColor: Colors.redAccent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: StatusCard(
+                                    title: 'Humidity',
+                                    data: humidity,
+                                    unit: '%',
+                                    icon: Icons.water_drop_outlined,
+                                    iconColor: Colors.blueAccent,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: StatusCard(
+                                    title: 'Light Level',
+                                    data: lightLevel,
+                                    unit: 'lux',
+                                    icon: Icons.wb_sunny_outlined,
+                                    iconColor: Colors.yellowAccent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // -- controls section --
+                      Row(
+                        key: _controlsKey,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            'CONTROLS',
+                            style: GoogleFonts.inter(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              height: 1.0,
+                            ),
+                            textHeightBehavior: const TextHeightBehavior(
+                              applyHeightToFirstAscent: false,
+                              applyHeightToLastDescent: false,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.history,
+                              color: Color.fromRGBO(146, 138, 138, 1.0),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ActuatorHistoryPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: isManualMode ? 12.0 : 4.0),
+
+                      // -- controls widgets --
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isManualMode
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFFE8F0FE),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isManualMode
+                                ? const Color(0xFF66BB6A)
+                                : const Color(0xFF8AB4F8),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start, // align icon to top
+                          children: [
+                            Icon(
+                              isManualMode
+                                  ? Icons.recommend_outlined
+                                  : Icons.auto_awesome,
+                              color: isManualMode
+                                  ? const Color(0xFF2E7D32)
+                                  : const Color(0xFF1967D2),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: isManualMode
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "AI RECOMMENDED ACTION",
+                                          style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF2E7D32),
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          flockInterpretation,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF2E7D32),
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      "Controls are locked while in Automatic Mode. Switch to Manual to take over.",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF1967D2),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      IgnorePointer(
+                        ignoring: !isManualMode,
+                        child: Opacity(
+                          opacity: isManualMode ? 1.0 : 0.4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: ControlCard(
+                                        title: 'Fans',
+                                        icon: Icons.air_outlined,
+                                        isOn: isFansOn,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            isFansOn = value;
+                                          });
+                                          _updateControl('fans', value);
+                                        },
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 16),
+
+                                    Expanded(
+                                      child: ControlCard(
+                                        title: 'Heater',
+                                        icon: Icons.whatshot_outlined,
+                                        isOn: isHeaterOn,
+                                        onChanged: (value) {
+                                          setState(() => isHeaterOn = value);
+                                          _updateControl('heater', value);
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              SliderControlCard(
+                                title: 'Light Bulb',
+                                icon: Icons.lightbulb_outline,
+                                value: lightBrightness,
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    lightBrightness = newValue;
+                                  });
+                                },
+                                onChangeEnd: (newValue) {
+                                  _updateControl(
+                                    'lightBrightness',
+                                    newValue.round(),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 90),
+                    ],
+                  ),
+                ),
+              ),
             ),
-        ),
-      ),
-      ),
-      ),
-        Align(
-            alignment: Alignment.bottomCenter,
-            child: _buildFloatingNavBar(), 
           ),
-      ],
-    ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: _buildFloatingNavBar(),
+          ),
+        ],
+      ),
     );
   }
 
-// for bottom navigation
+  // for bottom navigation
   Widget _buildFloatingNavBar() {
     return Padding(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
       child: Container(
         height: 75,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:1),
+          color: Colors.white.withValues(alpha: 1),
           borderRadius: BorderRadius.circular(40),
-          border: Border.all(color: Colors.grey.shade200, width: 1.5), 
+          border: Border.all(color: Colors.grey.shade200, width: 1.5),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -1177,9 +1337,24 @@ Future<void> fetchUnreadCount() async {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildNavItem(0, Icons.tune_rounded, "Configuration", _configKey),
-            _buildNavItem(1, Icons.smart_display_outlined, "Video Feed", _videoKey),
-            _buildNavItem(2, Icons.device_thermostat_rounded, "Environmental\nStatus", _envKey),
-            _buildNavItem(3, Icons.settings_remote_outlined, "Controls", _controlsKey),
+            _buildNavItem(
+              1,
+              Icons.smart_display_outlined,
+              "Video Feed",
+              _videoKey,
+            ),
+            _buildNavItem(
+              2,
+              Icons.device_thermostat_rounded,
+              "Environmental\nStatus",
+              _envKey,
+            ),
+            _buildNavItem(
+              3,
+              Icons.settings_remote_outlined,
+              "Controls",
+              _controlsKey,
+            ),
           ],
         ),
       ),
@@ -1192,7 +1367,7 @@ Future<void> fetchUnreadCount() async {
 
     return GestureDetector(
       onTap: () => _scrollToSection(key, index),
-      behavior: HitTestBehavior.opaque, 
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1205,7 +1380,7 @@ Future<void> fetchUnreadCount() async {
               fontSize: 10,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               color: color,
-              height: 1.1, 
+              height: 1.1,
             ),
           ),
         ],
@@ -1213,4 +1388,3 @@ Future<void> fetchUnreadCount() async {
     );
   }
 }
-
