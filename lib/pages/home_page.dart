@@ -261,10 +261,22 @@ class _MyHomePageState extends State<MyHomePage> {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         setState(() {
-          ammoniaLevel = data['ammonia']?.toString() ?? '--';
+          var rawAmmonia = data['ammonia'];
+          if (rawAmmonia is num) {
+            ammoniaLevel = rawAmmonia.toStringAsFixed(3);
+          } else {
+            ammoniaLevel = rawAmmonia?.toString() ?? '--';
+          }
+
+          var rawLight = data['lightLevel'];
+          if (rawLight is num) {
+            lightLevel = rawLight.toStringAsFixed(3);
+          } else {
+            lightLevel = rawLight?.toString() ?? '--';
+          }
+          
           temperature = data['temperature']?.toString() ?? '--';
           humidity = data['humidity']?.toString() ?? '--';
-          lightLevel = data['lightLevel']?.toString() ?? '--';
         });
       } else {
         // Handle case where data doesn't exist
@@ -1075,6 +1087,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     unit: 'ppm',
                                     icon: Icons.dangerous_outlined,
                                     iconColor: Colors.green,
+                                    selectedWeek: selectedWeek,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -1085,6 +1098,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     unit: '°C',
                                     icon: Icons.thermostat,
                                     iconColor: Colors.redAccent,
+                                    selectedWeek: selectedWeek,
                                   ),
                                 ),
                               ],
@@ -1104,6 +1118,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     unit: '%',
                                     icon: Icons.water_drop_outlined,
                                     iconColor: Colors.blueAccent,
+                                    selectedWeek: selectedWeek,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -1114,6 +1129,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     unit: 'lux',
                                     icon: Icons.wb_sunny_outlined,
                                     iconColor: Colors.yellowAccent,
+                                    selectedWeek: selectedWeek,
                                   ),
                                 ),
                               ],
