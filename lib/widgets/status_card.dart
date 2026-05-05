@@ -32,7 +32,7 @@ class StatusCard extends StatelessWidget {
     String lowLabel = 'TOO LOW';
     String highRec = 'Adjust settings to lower the value.';
     String lowRec = 'Adjust settings to increase the value.';
-    String normalRec = 'Maintain current environmental settings.';
+    String normalRec = 'Maintain current controls settings.';
     String targetSubtitle = '';
 
     // --- SENSOR SPECIFIC TARGETS & RECOMMENDATIONS ---
@@ -50,7 +50,7 @@ class StatusCard extends StatelessWidget {
       
 
       case 'Ammonia Level':
-        highLabel = 'DANGER';
+        highLabel = 'TOO HIGH';
         highRec = 'Turn ON the fans immediately.';
         
         targetMin = 0.0; 
@@ -155,124 +155,153 @@ class StatusCard extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Pushes the top group and bottom group apart
                 children: [
-                  // --- TINTED ICON BOX & STATUS PILL ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  
+                  // ==========================================
+                  // TOP GROUP: Icon, Title, Value, & Subtitle
+                  // ==========================================
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: iconColor.withValues(alpha: 0.15), 
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          icon, 
-                          color: iconColor, 
-                          size: 28
+                      // --- TINTED ICON BOX & STATUS PILL ---
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: iconColor.withValues(alpha: 0.15), 
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              icon, 
+                              color: iconColor, 
+                              size: 28
+                            ),
+                          ),
+                          
+                          if (isNumeric)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: statusBgColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                statusLabel,
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+                      
+                      // --- WIDGET TITLE ---
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            fontSize: 16, 
+                            fontWeight: FontWeight.w500,
+                            color: const Color.fromRGBO(30, 30, 30, 1.0),
+                          ),
                         ),
                       ),
-                      
-                      if (isNumeric)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: statusBgColor,
-                            borderRadius: BorderRadius.circular(20),
+
+                      const SizedBox(height: 4),
+
+                      // --- DATA VALUE ---
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          isError ? '--' : displayData, 
+                          style: GoogleFonts.inter(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            color: const Color.fromRGBO(30, 30, 30, 1.0),
+                            height: 1.0, 
                           ),
-                          child: Text(
-                            statusLabel,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: statusColor,
-                            ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // --- TARGET SUBTITLE ---
+                      if (isNumeric)
+                        Text(
+                          targetSubtitle, // Uses the dynamic subtitle we created earlier
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade500,
                           ),
                         ),
                     ],
                   ),
 
-                  const SizedBox(height: 12),
-
-                  // --- AI RECOMMENDATION BOX ---
+                  // ==========================================
+                  // BOTTOM GROUP: AI Recommendation Box
+                  // ==========================================
                   if (isNumeric)
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      margin: const EdgeInsets.only(top: 16),
                       decoration: BoxDecoration(
                         color: recBgColor,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: recBorderColor),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start, // Aligns icon to the top of the text
                         children: [
-                          Text(
-                            'AI RECOMMENDATION:',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: recTextColor,
-                            ),
+                          // --- The AI Icon ---
+                          Icon(
+                            Icons.recommend_outlined,
+                            color: recTextColor, // Automatically changes to Red/Green to match the text!
+                            size: 20,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            aiRecommendation,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1E1E1E),
+                          
+                          const SizedBox(width: 8),
+                          
+                          // --- The Text Column ---
+                          Expanded( // Wrapped in Expanded so long text wraps to the next line safely
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'AI RECOMMENDED ACTION',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: recTextColor,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  aiRecommendation,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: recTextColor,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  
-                  // --- WIDGET TITLE ---
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 16, 
-                        fontWeight: FontWeight.w400,
-                        color: const Color.fromRGBO(30, 30, 30, 1.0),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // --- DATA VALUE ---
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      isError ? '--' : displayData, 
-                      style: GoogleFonts.inter(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        color: const Color.fromRGBO(30, 30, 30, 1.0),
-                        height: 1.0, 
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // --- TARGET SUBTITLE ---
-                  if (isNumeric)
-                    Text(
-                      targetSubtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade500,
-                        height: 1.3,
                       ),
                     ),
                 ],
